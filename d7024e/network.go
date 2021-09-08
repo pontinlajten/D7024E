@@ -15,16 +15,16 @@ const (
 	CONN_TYPE = "udp"
 )
 
-func createNetwork(me *Contact, table *RoutingTable, kademlia *Kademlia) {
-	network = Network{} // Create from Network struct
+func createNetwork(me *Contact, table *RoutingTable, kademlia *Kademlia) Network {
+	network := Network{} // Create from Network struct
 	network.me = me
 	network.table = table
 	network.kademlia = kademlia
 	return network
 }
 
-func Listen(me Contact, port int) {
-	raddr, err := net.ResolveUDPAddr(CONN_TYPE, me.Address)
+func (network *Network) Listen(me Contact, port int) {
+	raddr, err := net.ResolveUDPAddr(CONN_TYPE, me.Address) // ResolveUDPAddr(str, str)
 	conn, err2 := net.ListenUDP(CONN_TYPE, raddr)
 	if (err != nil) || (err2 != nil) {
 		fmt.Println("Error udp: ", err, "    ", err2)
