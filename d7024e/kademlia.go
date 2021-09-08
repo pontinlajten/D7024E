@@ -1,6 +1,13 @@
 package d7024e
 
+import (
+	"fmt"
+)
+
 type Kademlia struct {
+	me      Contact
+	table   *RoutingTable
+	network *Network
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {
