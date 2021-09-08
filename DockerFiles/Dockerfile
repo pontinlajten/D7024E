@@ -12,21 +12,3 @@ FROM alpine:latest
 #
 # $ docker build . -t kadlab
 
-#WORKDIR /app 
-#RUN mkdir /app 
-#ADD . /app/
-#COPY 
-#RUN docker build . -t kadlab
-#USER root
-#CMD ["./kadlab"]
-
-#RUN mkdir /app 
-#ADD . /app/
-#WORKDIR /app 
-
-
-#RUN docker build . -t kadlab
-#USER root
-#EXPOSE 8080
-#CMD ["kadlab"]
-#ENTRYPOINT ["kadlab"]
