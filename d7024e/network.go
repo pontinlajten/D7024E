@@ -15,6 +15,7 @@ const (
 	CONN_TYPE = "udp"
 )
 
+// Template for init. an network.
 func createNetwork(me *Contact, table *RoutingTable, kademlia *Kademlia) Network {
 	network := Network{} // Create from Network struct
 	network.me = me
@@ -23,6 +24,7 @@ func createNetwork(me *Contact, table *RoutingTable, kademlia *Kademlia) Network
 	return network
 }
 
+// IN-PROGRESS
 func (network *Network) Listen(me Contact, port int) {
 	raddr, err := net.ResolveUDPAddr(CONN_TYPE, me.Address) // ResolveUDPAddr(str, str)
 	conn, err2 := net.ListenUDP(CONN_TYPE, raddr)
