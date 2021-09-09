@@ -1,11 +1,13 @@
-FROM alphine:latest
+FROM alpine:latest
+RUN apk add --no-cache go
+RUN go version
 
 # Set destination for COPY
 WORKDIR /app
 
 # Download Go modules
 COPY go.mod .
-COPY go.sum .
+#COPY go.sum .
 RUN go mod download
 
 # Copy the source code. Note the slash at the end, as explained in
@@ -27,4 +29,4 @@ EXPOSE 8080
 #ENV HTTP_PORT=8081
 
 # Run
-# CMD [ "/main" ]
+CMD [ "/main" ]
