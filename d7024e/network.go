@@ -12,7 +12,8 @@ type Network struct {
 }
 
 const (
-	CONN_TYPE = "udp"
+	CONN_TYPE       = "udp"
+	MAX_BUFFER_SIZE = 1024
 )
 
 // Template for init. an network.
@@ -32,10 +33,20 @@ func (network *Network) Listen(me Contact, port int) {
 		fmt.Println("Error udp: ", err, "    ", err2)
 	}
 
-	defer conn.Close()
+	defer conn.Close()                      // defer: Close last, after all functions execution below is done.
+	buffer := make([]byte, MAX_BUFFER_SIZE) // Recieve ASCII, byte representation.
 
-	ch := make()
-	buffer := make([]byte, 1024) // Recieve ASCII, byte representation.
+	for {
+		n, addr, err := conn.ReadFrom(buffer)
+		if err != nil {
+			fmt.Println("Error ReadFromUDP", err)
+		}
+		fmt.Printf("packet-received: bytes=%d from=%s\n", n, addr.String())
+
+		// n, err = pc.WriteTo(buffer[:n], addr)
+	}
+
+	// buffer <- conn
 
 }
 
