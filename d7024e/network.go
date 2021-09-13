@@ -3,10 +3,12 @@ package d7024e
 import (
 	"fmt"
 	"net"
+	"sync"
 )
 
 type Network struct {
 	me       *Contact
+	mutex    *sync.Mutex
 	table    *RoutingTable
 	kademlia *Kademlia
 }
@@ -14,12 +16,19 @@ type Network struct {
 const (
 	CONN_TYPE       = "udp"
 	MAX_BUFFER_SIZE = 1024
+
+	// MSG TYPES.
+	PING      = "ping"
+	FIND_NODE = "find_node"
+	FIND_DATA = "find_data"
+	STORE     = "store"
 )
 
 // Template for init. an network.
 func createNetwork(me *Contact, table *RoutingTable, kademlia *Kademlia) Network {
 	network := Network{} // Create from Network struct
 	network.me = me
+	network.mutex = &sync.Mutex{}
 	network.table = table
 	network.kademlia = kademlia
 	return network
