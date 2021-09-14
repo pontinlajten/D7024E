@@ -51,11 +51,7 @@ func (network *Network) Listen(me Contact, port int) {
 			fmt.Println("Error ReadFromUDP", err)
 		}
 		fmt.Printf("packet-received: bytes=%d from=%s\n", n, addr.String())
-
-		// n, err = pc.WriteTo(buffer[:n], addr)
 	}
-
-	// buffer <- conn
 
 }
 

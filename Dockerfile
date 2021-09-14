@@ -14,6 +14,9 @@ RUN go mod download
 # https://docs.docker.com/engine/reference/builder/#copy
 COPY *.go ./
 
+# Adds d7024e directory to docker. 
+ADD d7024e ./d7024e
+
 # Build
 RUN go build -o /main
 
@@ -29,4 +32,4 @@ EXPOSE 8080
 #ENV HTTP_PORT=8081
 
 # Run
-CMD [ "/main" ]
+#CMD [ "/main" ]
