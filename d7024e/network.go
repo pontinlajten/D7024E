@@ -16,12 +16,6 @@ type Network struct {
 const (
 	CONN_TYPE       = "udp"
 	MAX_BUFFER_SIZE = 1024
-
-	// MSG TYPES.
-	PING      = "ping"
-	FIND_NODE = "find_node"
-	FIND_DATA = "find_data"
-	STORE     = "store"
 )
 
 // Template for init. an network.
@@ -35,14 +29,15 @@ func createNetwork(me *Contact, table *RoutingTable, kademlia *Kademlia) Network
 }
 
 // IN-PROGRESS
-func (network *Network) Listen(me Contact, port int) {
+func (network *Network) Listen(me Contact, port int) { // Listen(ip string, port int) original.
 	raddr, err := net.ResolveUDPAddr(CONN_TYPE, me.Address) // ResolveUDPAddr(str, str)
 	conn, err2 := net.ListenUDP(CONN_TYPE, raddr)
 	if (err != nil) || (err2 != nil) {
 		fmt.Println("Error udp: ", err, "    ", err2)
 	}
 
-	defer conn.Close()                      // defer: Close last, after all functions execution below is done.
+	defer conn.Close() // defer: Close last, after all functions execution below is done.
+	channel := make(chan []byte)
 	buffer := make([]byte, MAX_BUFFER_SIZE) // Recieve ASCII, byte representation.
 
 	for {
@@ -54,6 +49,8 @@ func (network *Network) Listen(me Contact, port int) {
 	}
 
 }
+
+func msgHandler()
 
 func (network *Network) SendPingMessage(contact *Contact) {
 	// TODO
