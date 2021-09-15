@@ -30,7 +30,7 @@ func createNetwork(me *Contact, table *RoutingTable, kademlia *Kademlia) Network
 
 // IN-PROGRESS
 func (network *Network) Listen(me Contact, port int) { // Listen(ip string, port int) original.
-	raddr, err := net.ResolveUDPAddr(CONN_TYPE, me.Address) // ResolveUDPAddr(str, str)
+	raddr, err := net.ResolveUDPAddr(CONN_TYPE, ":8080") // ResolveUDPAddr(str, str). me.Address
 	conn, err2 := net.ListenUDP(CONN_TYPE, raddr)
 	if (err != nil) || (err2 != nil) {
 		fmt.Println("Error udp: ", err, "    ", err2)
@@ -41,19 +41,16 @@ func (network *Network) Listen(me Contact, port int) { // Listen(ip string, port
 	buffer := make([]byte, MAX_BUFFER_SIZE) // Recieve ASCII, byte representation.
 
 	for {
-		n, addr, err := conn.ReadFrom(buffer)
+		n, addr, err := conn.ReadFromUDP(buffer)
 		if err != nil {
 			fmt.Println("Error ReadFromUDP", err)
 		}
 		fmt.Printf("packet-received: bytes=%d from=%s\n", n, addr.String())
 	}
-
 }
 
-func msgHandler()
-
 func (network *Network) SendPingMessage(contact *Contact) {
-	// TODO
+
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact) {
