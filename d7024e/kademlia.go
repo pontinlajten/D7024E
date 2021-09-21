@@ -35,7 +35,14 @@ func hashIt(str string) (hash string) {
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {
-	// TODO
+	/*
+		kClosest := kademlia.rt.FindClosestContacts(target.ID, 3)
+		for i, c := range kClosest {
+			if c.ID.Equals(target.ID) {
+
+			}
+		}
+	*/
 }
 
 func (kademlia *Kademlia) LookupData(hash string) {
