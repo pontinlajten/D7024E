@@ -37,7 +37,7 @@ func (network *Network) Listen(me Contact, port int) { // Listen(ip string, port
 	}
 
 	defer conn.Close() // defer: Close last, after all functions execution below is done.
-	channel := make(chan []byte)
+	//channel := make(chan []byte)
 	buffer := make([]byte, MAX_BUFFER_SIZE) // Recieve ASCII, byte representation.
 
 	for {

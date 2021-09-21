@@ -1,4 +1,4 @@
-package msg
+package d7024e
 
 const (
 	PING      = "PING"
@@ -17,4 +17,8 @@ type FindValue struct {
 }
 
 type Store struct {
+}
+
+func MsgHandler(channel chan []byte, me Contact, network Network) {
+
 }
