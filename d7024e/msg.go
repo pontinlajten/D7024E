@@ -8,9 +8,13 @@ const (
 )
 
 type Ping struct {
+	Id      string
+	Address string
 }
 
 type FindNode struct {
+	Id      string
+	Address string
 }
 
 type FindValue struct {

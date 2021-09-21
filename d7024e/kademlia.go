@@ -2,12 +2,19 @@ package d7024e
 
 type Kademlia struct {
 	me      Contact
-	table   *RoutingTable
+	rt      *RoutingTable
 	network *Network
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {
-	// TODO
+	/*
+		kClosest := kademlia.rt.FindClosestContacts(target.ID, 3)
+		for i, c := range kClosest {
+			if c.ID.Equals(target.ID) {
+
+			}
+		}
+	*/
 }
 
 func (kademlia *Kademlia) LookupData(hash string) {

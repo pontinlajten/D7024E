@@ -3,13 +3,14 @@ package d7024e
 import (
 	"fmt"
 	"net"
+	"net/rpc"
 	"sync"
 )
 
 type Network struct {
 	me       *Contact
 	mutex    *sync.Mutex
-	table    *RoutingTable
+	rt       *RoutingTable
 	kademlia *Kademlia
 }
 
@@ -19,11 +20,11 @@ const (
 )
 
 // Template for init. an network.
-func createNetwork(me *Contact, table *RoutingTable, kademlia *Kademlia) Network {
+func createNetwork(me *Contact, rt *RoutingTable, kademlia *Kademlia) Network {
 	network := Network{} // Create from Network struct
 	network.me = me
 	network.mutex = &sync.Mutex{}
-	network.table = table
+	network.rt = rt
 	network.kademlia = kademlia
 	return network
 }
@@ -49,12 +50,39 @@ func (network *Network) Listen(me Contact, port int) { // Listen(ip string, port
 	}
 }
 
-func (network *Network) SendPingMessage(contact *Contact) {
+func (network *Network) SendPingMessage(contact *Contact, destination net.UDPAddr) {
+	var pingReply Ping
+	msg := Ping{Id: contact.ID.String(), Address: contact.Address}
+	client, err := rpc.Dial("udp", destination.String())
+	if err != nil {
+		fmt.Printf("failed to dial %s error: %s", destination.String(), err)
+	}
 
+	err = client.Call(PING, msg, pingReply)
+	if err != nil {
+		fmt.Printf("failed to PING %s error: %s", destination.String(), err)
+	} else {
+		newId := NewKademliaID(pingReply.Id)
+		newContact := NewContact(newId, pingReply.Address)
+		network.rt.AddContact(newContact)
+	}
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact) {
-	// TODO
+func (network *Network) SendFindContactMessage(contact *Contact, destination net.UDPAddr) []Contact {
+	var findNodeReply FindNode
+	msg := FindNode{Id: contact.ID.String(), Address: contact.Address}
+	client, err := rpc.Dial("udp", destination.String())
+	if err != nil {
+		fmt.Printf("failed to dial %s error: %s", destination.String(), err)
+		return nil
+	}
+
+	err = client.Call(FIND_NODE, msg, findNodeReply)
+	if err != nil {
+		fmt.Printf("failed to FIND NODE %s error: %s", destination.String(), err)
+		return nil
+	}
+
 }
 
 func (network *Network) SendFindDataMessage(hash string) {
