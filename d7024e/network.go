@@ -82,7 +82,7 @@ func (network *Network) SendFindContactMessage(contact *Contact, destination net
 		fmt.Printf("failed to FIND NODE %s error: %s", destination.String(), err)
 		return nil
 	}
-
+	return nil
 }
 
 func (network *Network) SendFindDataMessage(hash string) {

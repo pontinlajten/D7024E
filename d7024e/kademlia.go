@@ -3,6 +3,7 @@ package d7024e
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 )
 
 const (
@@ -17,24 +18,36 @@ type Kademlia struct {
 	//nt *Network
 }
 
+type LookedAt struct {
+}
+
 func NewKademlia(ip string) (kadNode Kademlia) {
-	//kademlia := Kademlia{}
-	kadNode.id = NewKademliaID(ip)
+	kadNode.id = NewKademliaID(HashIt(ip))
 	kadNode.me = NewContact(kadNode.id, ip)
 	kadNode.rt = NewRoutingTable(kadNode.me)
-	//kademlia.nt = createNetwork(me, rt, kademlia)
+
+	fmt.Println("")
+	fmt.Println(kadNode.id)
+	fmt.Println("")
+	fmt.Println(kadNode.me)
+	fmt.Println("")
+	fmt.Println(kadNode.rt)
 	return
 }
 
-//help function that has data
-func hashIt(str string) (hash string) {
+//help function that hash data
+func HashIt(str string) (hash string) {
 	hashStr := sha1.New()
 	hashStr.Write([]byte(str))
 	hash = hex.EncodeToString(hashStr.Sum(nil))
+	//fmt.Println(hash)
 	return
+
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {
+	//kClosest := kademlia.rt.FindClosestContacts(target.ID, k)
+
 	/*
 		kClosest := kademlia.rt.FindClosestContacts(target.ID, 3)
 		for i, c := range kClosest {
