@@ -1,6 +1,7 @@
 package d7024e
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/rpc"
@@ -50,13 +51,22 @@ func (network *Network) Listen(ip string, port int) { // Listen(ip string, port 
 		if err != nil {
 			fmt.Println("Error ReadFromUDP", err)
 		}
-		MsgHandler(buffer[0:n], addr, conn)
+		MsgHandler(buffer[:n], addr, conn)
 
 		fmt.Printf("packet-received: bytes=%d from=%s\n", n, addr.String())
 	}
 }
 
-func MsgHandler(channel []byte, addr *net.UDPAddr, conn *net.UDPConn) {
+func MsgHandler(data []byte, addr *net.UDPAddr, conn *net.UDPConn) {
+	decoded := unmarshall(data)
+
+	fmt.Println("RPC: " + decoded.RPC)
+
+	switch decoded.RPC {
+	case PING:
+
+	case STORE:
+	}
 
 }
 
@@ -105,4 +115,17 @@ func (network *Network) SendFindDataMessage(hash string) {
 
 func (network *Network) SendStoreMessage(data []byte) {
 	// TODO
+}
+
+/////////////////////// HELP FUNCTIONS //////////////////////////
+
+func marshall(msg Message) []byte {
+	encoded, _ := json.Marshal(msg)
+	return encoded
+}
+
+func unmarshall(data []byte) Message {
+	var decoded Message
+	json.Unmarshal([]byte(data), &decoded)
+	return decoded
 }

@@ -7,6 +7,17 @@ const ( // RPC Operations
 	STORE     = "STORE"
 )
 
+type Message struct {
+	Id      string // Kadmelia ID.
+	RPC     string // RPC operation.
+	Address string // IP Adress.
+	data    Data
+}
+
+type Data struct {
+	data string
+}
+
 type Ping struct {
 	Id      string // Kadmelia ID.
 	RPC     string // RPC operation.
