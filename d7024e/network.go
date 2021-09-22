@@ -29,8 +29,12 @@ func createNetwork(me *Contact, rt *RoutingTable, kademlia *Kademlia) Network {
 	return network
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+
 // IN-PROGRESS
-func (network *Network) Listen(me Contact, port int) { // Listen(ip string, port int) original.
+func (network *Network) Listen(ip string, port int) { // Listen(ip string, port int) original.
 	raddr, err := net.ResolveUDPAddr(CONN_TYPE, ":8080") // ResolveUDPAddr(str, str). me.Address
 	conn, err2 := net.ListenUDP(CONN_TYPE, raddr)
 	if (err != nil) || (err2 != nil) {
@@ -46,9 +50,19 @@ func (network *Network) Listen(me Contact, port int) { // Listen(ip string, port
 		if err != nil {
 			fmt.Println("Error ReadFromUDP", err)
 		}
+		MsgHandler(buffer[0:n], addr, conn)
+
 		fmt.Printf("packet-received: bytes=%d from=%s\n", n, addr.String())
 	}
 }
+
+func MsgHandler(channel []byte, addr *net.UDPAddr, conn *net.UDPConn) {
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 
 func (network *Network) SendPingMessage(contact *Contact, destination net.UDPAddr) {
 	var pingReply Ping
