@@ -11,7 +11,7 @@ type Message struct {
 	Id      string // Kadmelia ID.
 	RPC     string // RPC operation.
 	Address string // IP Adress.
-	Body    Data
+	Data    Data
 }
 
 type Data struct {

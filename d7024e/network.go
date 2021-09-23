@@ -17,7 +17,6 @@ type Network struct {
 const (
 	CONN_TYPE       = "udp"
 	MAX_BUFFER_SIZE = 1024
-	ALPHA           = 3
 )
 
 // Template for init. an network.
@@ -66,11 +65,12 @@ func MsgHandler(data []byte, addr *net.UDPAddr, conn *net.UDPConn, node Kademlia
 
 	msg.RPC = decoded.RPC // RPC operation
 	msg.Id = decoded.Id   // Kademlia id represented as a string
-	msg.Body = Data{}     // Body data
+
+	msg.Data = Data{} // Body data
 
 	if decoded.RPC == FIND_NODE {
 		contacts := node.rt.FindClosestContacts(NewKademliaID(decoded.Id), ALPHA)
-		msg.Body.Nodes = contacts
+		msg.Data.Nodes = contacts
 	} else if decoded.RPC == FIND_DATA {
 		// ADD HASH AND SO ON. TODO
 	}
@@ -125,13 +125,13 @@ func (network *Network) SendFindContactMessage(contact *Contact) {
 }
 
 func (network *Network) SendFindDataMessage(hash string, contact *Contact) {
-	msg := Message{Address: network.me.Address, RPC: FIND_DATA, data: Data{Key: hash}}
+	msg := Message{Address: network.me.Address, RPC: FIND_DATA, Data: Data{Key: hash}}
 	SendData(msg, contact)
 }
 
 func (network *Network) SendStoreMessage(data string, contact *Contact) {
 	hash := network.kademlia.HashIt(data)
-	msg := Message{Address: network.me.Address, RPC: STORE, data: Data{Key: hash, Value: data}}
+	msg := Message{Address: network.me.Address, RPC: STORE, Data: Data{Key: hash, Value: data}}
 	SendData(msg, contact)
 }
 
