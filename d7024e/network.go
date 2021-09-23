@@ -12,12 +12,13 @@ type Network struct {
 	me       *Contact
 	mutex    *sync.Mutex
 	rt       *RoutingTable
-	kademlia *Kademlia
+	kademlia *Kademlia // Used in Listen.
 }
 
 const (
 	CONN_TYPE       = "udp"
 	MAX_BUFFER_SIZE = 1024
+	ALPHA           = 3
 )
 
 // Template for init. an network.
@@ -30,12 +31,10 @@ func createNetwork(me *Contact, rt *RoutingTable, kademlia *Kademlia) Network {
 	return network
 }
 
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// RESPONSE /////////////////////////////////////////
 
 // IN-PROGRESS
-func (network *Network) Listen(ip string, port int) { // Listen(ip string, port int) original.
+func (network *Network) Listen(ip string, port int, node Kademlia) { // Listen(ip string, port int) original.
 	raddr, err := net.ResolveUDPAddr(CONN_TYPE, ":8080") // ResolveUDPAddr(str, str). me.Address
 	conn, err2 := net.ListenUDP(CONN_TYPE, raddr)
 	if (err != nil) || (err2 != nil) {
@@ -51,7 +50,7 @@ func (network *Network) Listen(ip string, port int) { // Listen(ip string, port 
 		if err != nil {
 			fmt.Println("Error ReadFromUDP", err)
 		}
-		msg := MsgHandler(buffer[:n], addr, conn)
+		msg := MsgHandler(buffer[:n], addr, conn, node)
 		marshalledMsg := marshall(msg)
 		sendResponse(marshalledMsg, addr, conn)
 
@@ -59,18 +58,22 @@ func (network *Network) Listen(ip string, port int) { // Listen(ip string, port 
 	}
 }
 
-func MsgHandler(data []byte, addr *net.UDPAddr, conn *net.UDPConn) Message {
+func MsgHandler(data []byte, addr *net.UDPAddr, conn *net.UDPConn, node Kademlia) Message {
 	decoded := unmarshall(data)
 
 	fmt.Println("RPC: " + decoded.RPC)
 
 	msg := Message{}
+
 	msg.RPC = decoded.RPC // RPC operation
 	msg.Id = decoded.Id   // Kademlia id represented as a string
 	msg.Body = Data{}     // Body data
 
-	if decoded.RPC == FIND_DATA || decoded.RPC == FIND_NODE {
-		contacts := rt.find
+	if decoded.RPC == FIND_NODE {
+		contacts := node.rt.FindClosestContacts(NewKademliaID(decoded.Id), ALPHA)
+		msg.Body.Nodes = contacts
+	} else if decoded.RPC == FIND_DATA {
+		// ADD HASH AND SO ON. TODO
 	}
 
 	return msg
@@ -83,8 +86,6 @@ func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
 func (network *Network) SendPingMessage(contact *Contact, destination net.UDPAddr) {
