@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"net/rpc"
 	"sync"
 )
 
@@ -88,47 +87,52 @@ func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
 
 //////////////////////////////////////////////////////////////////////////////////
 
-func (network *Network) SendPingMessage(contact *Contact, destination net.UDPAddr) {
-	var pingReply Ping
-	msg := Ping{Id: contact.ID.String(), Address: contact.Address}
-	client, err := rpc.Dial("udp", destination.String())
+func SendData(msg Message, contact *Contact) {
+	var rpcMsg string
+	sendMsg, err := json.Marshal(msg)
+	Client, err := net.Dial("udp", contact.Address)
 	if err != nil {
-		fmt.Printf("failed to dial %s error: %s", destination.String(), err)
+		fmt.Printf("failed to dial %s error: %s", contact.Address, err)
 	}
+	switch msg.RPC {
+	case PING:
+		rpcMsg = PING
 
-	err = client.Call(PING, msg, pingReply)
+	case FIND_NODE:
+		rpcMsg = FIND_NODE
+
+	case FIND_DATA:
+		rpcMsg = FIND_DATA
+
+	case STORE:
+		rpcMsg = STORE
+	}
+	defer Client.Close()
+	_, err = Client.Write(sendMsg)
 	if err != nil {
-		fmt.Printf("failed to PING %s error: %s", destination.String(), err)
-	} else {
-		newId := NewKademliaID(pingReply.Id)
-		newContact := NewContact(newId, pingReply.Address)
-		network.rt.AddContact(newContact)
+		fmt.Printf("failed to %s to %s error: %s", rpcMsg, contact.Address, err)
 	}
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact, destination net.UDPAddr) []Contact {
-	var findNodeReply FindNode
-	msg := FindNode{Id: contact.ID.String(), Address: contact.Address}
-	client, err := rpc.Dial("udp", destination.String())
-	if err != nil {
-		fmt.Printf("failed to dial %s error: %s", destination.String(), err)
-		return nil
-	}
-
-	err = client.Call(FIND_NODE, msg, findNodeReply)
-	if err != nil {
-		fmt.Printf("failed to FIND NODE %s error: %s", destination.String(), err)
-		return nil
-	}
-
+func (network *Network) SendPingMessage(contact *Contact) {
+	msg := Message{Id: network.me.ID.String(), RPC: PING, Address: network.me.Address}
+	SendData(msg, contact)
 }
 
-func (network *Network) SendFindDataMessage(hash string) {
-	// TODO
+func (network *Network) SendFindContactMessage(contact *Contact) {
+	msg := Message{Id: network.me.ID.String(), RPC: FIND_NODE, Address: network.me.Address}
+	SendData(msg, contact)
 }
 
-func (network *Network) SendStoreMessage(data []byte) {
-	// TODO
+func (network *Network) SendFindDataMessage(hash string, contact *Contact) {
+	msg := Message{Address: network.me.Address, RPC: FIND_DATA, data: Data{Key: hash}}
+	SendData(msg, contact)
+}
+
+func (network *Network) SendStoreMessage(data string, contact *Contact) {
+	hash := network.kademlia.HashIt(data)
+	msg := Message{Address: network.me.Address, RPC: STORE, data: Data{Key: hash, Value: data}}
+	SendData(msg, contact)
 }
 
 /////////////////////// HELP FUNCTIONS //////////////////////////
