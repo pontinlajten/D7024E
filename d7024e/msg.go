@@ -7,22 +7,16 @@ const (
 	STORE     = "STORE"
 )
 
-type Ping struct {
-	Id      string
-	Address string
+type Message struct {
+	Id      string // Kadmelia ID.
+	RPC     string // RPC operation.
+	Address string // IP Adress.
+	data    Data
 }
 
-type FindNode struct {
-	Id      string
-	Address string
+type Data struct {
+	Key string
+	Value string
 }
 
-type FindValue struct {
-}
 
-type Store struct {
-}
-
-func MsgHandler(channel chan []byte, me Contact, network Network) {
-
-}
