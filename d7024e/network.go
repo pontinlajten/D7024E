@@ -17,6 +17,7 @@ type Network struct {
 const (
 	CONN_TYPE       = "udp"
 	MAX_BUFFER_SIZE = 1024
+	ALPHA           = 3
 )
 
 // Template for init. an network.
