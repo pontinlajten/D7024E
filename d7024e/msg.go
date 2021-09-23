@@ -11,11 +11,11 @@ type Message struct {
 	Id      string // Kadmelia ID.
 	RPC     string // RPC operation.
 	Address string // IP Adress.
-	data    Data
+	Body    Data
 }
 
 type Data struct {
-	data string
+	Nodes []Contact
 }
 
 type Ping struct {

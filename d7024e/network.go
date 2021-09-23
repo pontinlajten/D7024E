@@ -51,23 +51,36 @@ func (network *Network) Listen(ip string, port int) { // Listen(ip string, port 
 		if err != nil {
 			fmt.Println("Error ReadFromUDP", err)
 		}
-		MsgHandler(buffer[:n], addr, conn)
+		msg := MsgHandler(buffer[:n], addr, conn)
+		marshalledMsg := marshall(msg)
+		sendResponse(marshalledMsg, addr, conn)
 
 		fmt.Printf("packet-received: bytes=%d from=%s\n", n, addr.String())
 	}
 }
 
-func MsgHandler(data []byte, addr *net.UDPAddr, conn *net.UDPConn) {
+func MsgHandler(data []byte, addr *net.UDPAddr, conn *net.UDPConn) Message {
 	decoded := unmarshall(data)
 
 	fmt.Println("RPC: " + decoded.RPC)
 
-	switch decoded.RPC {
-	case PING:
+	msg := Message{}
+	msg.RPC = decoded.RPC // RPC operation
+	msg.Id = decoded.Id   // Kademlia id represented as a string
+	msg.Body = Data{}     // Body data
 
-	case STORE:
+	if decoded.RPC == FIND_DATA || decoded.RPC == FIND_NODE {
+		contacts := rt.find
 	}
 
+	return msg
+}
+
+func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
+	_, err := conn.WriteToUDP([]byte(responseMsg), addr)
+	if err != nil {
+		fmt.Printf("Could'nt send response %v", err)
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////
