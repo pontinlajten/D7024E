@@ -48,34 +48,27 @@ func (network *Network) Listen(ip string, port int, node Kademlia) { // Listen(i
 		if err != nil {
 			fmt.Println("Error ReadFromUDP", err)
 		}
-		msg := MsgHandler(buffer[:n], addr, conn, node)
-		marshalledMsg := marshall(msg)
-		sendResponse(marshalledMsg, addr, conn)
-
-		fmt.Printf("packet-received: bytes=%d from=%s\n", n, addr.String())
+		msg := network.MsgHandler(buffer[:n], conn, node)
+		replyEncoded := marshall(msg)
+		sendResponse(replyEncoded,addr,conn)
 	}
 }
 
-func MsgHandler(data []byte, addr *net.UDPAddr, conn *net.UDPConn, node Kademlia) Message {
+
+func (network *Network) MsgHandler(data []byte, conn *net.UDPConn, node Kademlia) Message {
 	decoded := unmarshall(data)
-
+	var reply Message
 	fmt.Println("RPC: " + decoded.RPC)
-
-	msg := Message{}
-
-	msg.RPC = decoded.RPC // RPC operation
-	msg.Id = decoded.Id   // Kademlia id represented as a string
-
-	msg.Data = Data{} // Body data
 
 	if decoded.RPC == FIND_NODE {
 		contacts := node.rt.FindClosestContacts(NewKademliaID(decoded.Id), ALPHA)
-		msg.Data.Nodes = contacts
-	} else if decoded.RPC == FIND_DATA {
-		// ADD HASH AND SO ON. TODO
+		//msg.Data.Nodes = contacts
+	} else if decoded.RPC == PING {
+		network.SendPongMessage(decoded)
+		reply = Message{Id: network.me.ID.String(), RPC: PONG, Address: network.me.Address}
 	}
 
-	return msg
+	return reply
 }
 
 func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
@@ -85,11 +78,18 @@ func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
 	}
 }
 
+func (network *Network) SendPongMessage(msg Message) {
+	id := NewKademliaID(msg.Id)
+	newContact := NewContact(id, msg.Address)
+	network.rt.AddContact(newContact)
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////
 
 func SendData(msg Message, contact *Contact) {
 	var rpcMsg string
-	sendMsg, err := json.Marshal(msg)
+	sendMsg := marshall(msg)
 	Client, err := net.Dial("udp", contact.Address)
 	if err != nil {
 		fmt.Printf("failed to dial %s error: %s", contact.Address, err)
