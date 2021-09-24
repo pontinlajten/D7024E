@@ -64,7 +64,7 @@ func (network *Network) MsgHandler(data []byte, conn *net.UDPConn, node Kademlia
 		contacts := node.rt.FindClosestContacts(NewKademliaID(decoded.Id), ALPHA)
 		//msg.Data.Nodes = contacts
 	} else if decoded.RPC == PING {
-		network.SendPongMessage(decoded)
+		network.PingHandler(decoded)
 		reply = Message{Id: network.me.ID.String(), RPC: PONG, Address: network.me.Address}
 	}
 
@@ -78,7 +78,7 @@ func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
 	}
 }
 
-func (network *Network) SendPongMessage(msg Message) {
+func (network *Network) PingHandler(msg Message) {
 	id := NewKademliaID(msg.Id)
 	newContact := NewContact(id, msg.Address)
 	network.rt.AddContact(newContact)
