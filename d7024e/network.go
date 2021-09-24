@@ -31,6 +31,9 @@ func createNetwork(me *Contact, rt *RoutingTable, kademlia *Kademlia) Network {
 
 /////////////////////////////// RESPONSE /////////////////////////////////////////
 
+/*
+	TODO: Maybe implement channel model instead of mutex. RESEARCH.
+*/
 // IN-PROGRESS
 func (network *Network) Listen(ip string, port int, node Kademlia) { // Listen(ip string, port int) original.
 	raddr, err := net.ResolveUDPAddr(CONN_TYPE, ":8080") // ResolveUDPAddr(str, str). me.Address
@@ -50,25 +53,40 @@ func (network *Network) Listen(ip string, port int, node Kademlia) { // Listen(i
 		}
 		msg := network.MsgHandler(buffer[:n], conn, node)
 		replyEncoded := marshall(msg)
-		sendResponse(replyEncoded,addr,conn)
+		sendResponse(replyEncoded, addr, conn)
 	}
 }
 
-
 func (network *Network) MsgHandler(data []byte, conn *net.UDPConn, node Kademlia) Message {
 	decoded := unmarshall(data)
-	var reply Message
+	reply := Message{}
+	reply.Data = Data{}
 	fmt.Println("RPC: " + decoded.RPC)
 
 	if decoded.RPC == FIND_NODE {
-		contacts := node.rt.FindClosestContacts(NewKademliaID(decoded.Id), ALPHA)
-		//msg.Data.Nodes = contacts
+		reply.Id = network.me.ID.String()
+		reply.RPC = FIND_NODE
+		reply.Address = network.me.Address
+		reply.Data.Nodes = network.FindnodeHandler(decoded)
 	} else if decoded.RPC == PING {
-		network.SendPongMessage(decoded)
-		reply = Message{Id: network.me.ID.String(), RPC: PONG, Address: network.me.Address}
+		reply.Id = network.me.ID.String()
+		reply.RPC = PING
+		reply.Address = network.me.Address
+		network.PingHandler(decoded)
 	}
 
 	return reply
+}
+
+func (network *Network) PingHandler(msg Message) {
+	id := NewKademliaID(msg.Id)
+	newContact := NewContact(id, msg.Address)
+	network.rt.AddContact(newContact)
+}
+
+func (network *Network) FindnodeHandler(msg Message) []Contact {
+	contacts := network.rt.FindClosestContacts(NewKademliaID(msg.Id), ALPHA)
+	return contacts
 }
 
 func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
@@ -77,13 +95,6 @@ func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
 		fmt.Printf("Could'nt send response %v", err)
 	}
 }
-
-func (network *Network) SendPongMessage(msg Message) {
-	id := NewKademliaID(msg.Id)
-	newContact := NewContact(id, msg.Address)
-	network.rt.AddContact(newContact)
-}
-
 
 //////////////////////////////////////////////////////////////////////////////////
 
