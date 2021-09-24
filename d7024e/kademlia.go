@@ -3,7 +3,6 @@ package d7024e
 import (
 	"crypto/sha1"
 	"encoding/hex"
-	"fmt"
 )
 
 const (
@@ -21,17 +20,10 @@ type Kademlia struct {
 type LookedAt struct {
 }
 
-func (kademlia *Kademlia) NewKademlia(ip string) (kadNode Kademlia) {
-	kadNode.id = NewKademliaID(kademlia.HashIt(ip))
-	kadNode.me = NewContact(kadNode.id, ip)
-	kadNode.rt = NewRoutingTable(kadNode.me)
-
-	fmt.Println("")
-	fmt.Println(kadNode.id)
-	fmt.Println("")
-	fmt.Println(kadNode.me)
-	fmt.Println("")
-	fmt.Println(kadNode.rt)
+func (kademlia *Kademlia) NewKademlia(ip string) {
+	kademlia.id = NewKademliaID(kademlia.HashIt(ip))
+	kademlia.me = NewContact(kademlia.id, ip)
+	kademlia.rt = NewRoutingTable(kademlia.me)
 	return
 }
 
@@ -47,20 +39,13 @@ func (kademlia *Kademlia) HashIt(str string) string {
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {
 	//kClosest := kademlia.rt.FindClosestContacts(target.ID, k)
-	//findkclosest(target, bucketSize) []Contact
+	kademlia.FindKClosest(target, bucketSize)
 
-	/*
-			kClosest := kademlia.rt.FindClosestContacts(target.ID, 3)
-			for i, c := range kClosest {
-				if c.ID.Equals(target.ID) {
-
-			}
-		}
-	*/
+	return
 }
 
-func (Kademlia *Kademlia) FindKClosest(target *Contact, k int) []Contact {
-	Kclosest := Kademlia.rt.FindClosestContacts(target.ID, k)
+func (kademlia *Kademlia) FindKClosest(target *Contact, k int) []Contact {
+	Kclosest := kademlia.rt.FindClosestContacts(target.ID, k)
 	return Kclosest
 }
 
@@ -71,3 +56,12 @@ func (kademlia *Kademlia) LookupData(hash string) {
 func (kademlia *Kademlia) Store(data []byte) {
 	// TODO
 }
+
+/*
+		kClosest := kademlia.rt.FindClosestContacts(target.ID, 3)
+		for i, c := range kClosest {
+			if c.ID.Equals(target.ID) {
+
+		}
+	}
+*/
