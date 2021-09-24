@@ -3,6 +3,7 @@ package d7024e
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 )
 
 const (
@@ -20,8 +21,8 @@ type Kademlia struct {
 type LookedAt struct {
 }
 
-/* func NewKademlia(ip string) (kadNode Kademlia) {
-	kadNode.id = NewKademliaID(HashIt(ip))
+func (kademlia *Kademlia) NewKademlia(ip string) (kadNode Kademlia) {
+	kadNode.id = NewKademliaID(kademlia.HashIt(ip))
 	kadNode.me = NewContact(kadNode.id, ip)
 	kadNode.rt = NewRoutingTable(kadNode.me)
 
@@ -32,7 +33,7 @@ type LookedAt struct {
 	fmt.Println("")
 	fmt.Println(kadNode.rt)
 	return
-} */
+}
 
 //help function that hash data
 func (kademlia *Kademlia) HashIt(str string) string {
