@@ -45,6 +45,13 @@ func main() {
 	network := kad.Network{}
 	network.Kademlia = &me
 
+	if localIP != bsIP {
+		newContact := kad.NewContact(kad.NewKademliaID(kad.HashIt(bsIP)), bsIP)
+		me.InitRt(&newContact)
+		fmt.Printf("\nRoutingtable: %x\n", me.Rt.FindClosestContacts(me.Me.ID, 4))
+	}
+
+	go network.Listen(port)
 }
 
 func GetOutboundIP() net.IP {

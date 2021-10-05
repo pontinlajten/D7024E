@@ -24,7 +24,7 @@ type KeyValue struct {
 }
 
 func NewKademlia(ip string) (kademlia Kademlia) {
-	kademlia.Id = NewKademliaID(kademlia.HashIt(ip))
+	kademlia.Id = NewKademliaID(HashIt(ip))
 	kademlia.Me = NewContact(kademlia.Id, ip)
 	kademlia.Rt = NewRoutingTable(kademlia.Me)
 	return
@@ -68,16 +68,6 @@ func (kademlia *Kademlia) InitRt(known *Contact) {
 	kademlia.Rt.AddContact(*known)
 	kademlia.LookupContact(&kademlia.Me)
 	fmt.Printf("Kademlia node joining network")
-}
-
-//help function that hash data
-func (kademlia *Kademlia) HashIt(str string) string {
-	hashStr := sha1.New()
-	hashStr.Write([]byte(str))
-	hash := hex.EncodeToString(hashStr.Sum(nil))
-	//fmt.Println(hash)
-	return hash
-
 }
 
 func HashIt(str string) string {

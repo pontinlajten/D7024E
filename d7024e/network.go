@@ -166,9 +166,8 @@ func (network *Network) SendFindDataMessage(hash string, contact *Contact) {
 	SendData(msg, contact)
 }
 
-func (network *Network) SendStoreMessage(data string, contact *Contact) {
-	hash := network.Kademlia.HashIt(data)
-	msg := Message{Address: network.Me.Address, RPC: STORE, Data: Data{Key: hash, Value: data}}
+func (network *Network) SendStoreMessage(key string, value string, contact *Contact) {
+	msg := Message{Address: network.Me.Address, RPC: STORE, Data: Data{Key: key, Value: value}}
 	SendData(msg, contact)
 }
 
