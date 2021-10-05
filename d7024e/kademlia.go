@@ -14,10 +14,12 @@ type Kademlia struct {
 	id *KademliaID
 	me Contact
 	rt *RoutingTable
-	//nt *Network
+	KeyValues []KeyValue
 }
 
-type LookedAt struct {
+type KeyValue struct {
+	Key string
+	Value string
 }
 
 func NewKademlia(ip string) (kademlia Kademlia) {
@@ -49,8 +51,13 @@ func (kademlia *Kademlia) FindKClosest(target *Contact, k int) []Contact {
 	return Kclosest
 }
 
-func (kademlia *Kademlia) LookupData(hash string) {
-	// TODO
+func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
+	for _, keyVal := range kademlia.KeyValues {
+		if hash == keyVal.Key {
+			return &keyVal
+		}
+	}
+	return nil
 }
 
 func (kademlia *Kademlia) Store(data []byte) {
