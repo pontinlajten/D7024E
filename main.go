@@ -29,18 +29,23 @@ func main() {
 
 	nodeIp := GetOutboundIP()
 
-	bsNode := bootstrapIp + ":" + port
+	bsIP := bootstrapIp + ":" + port
 
-	node := nodeIp.String() + ":" + port
+	localIP := nodeIp.String() + ":" + port
 
-	fmt.Println("BootStrap ip:", bsNode)
-	fmt.Println("New ip:", node)
+	fmt.Println("BootStrap ip:", bsIP)
+	fmt.Println("New ip:", localIP)
 
-	// network := &kad.Network{}
+	bsID := kad.NewKademliaID(kad.HashIt(bsIP))
+	bsContact := kad.NewContact(bsID, bsIP)
 
-	// go network.Listen()
-	newNode := kad.NewKademlia(node)
-	fmt.Println(newNode)
+	me := kad.NewKademlia(localIP)
+	me.InitRt(&bsContact)
+
+	network := kad.Network{}
+	network.Kademlia = &me
+	//fmt.Println(newNode)
+
 }
 
 func GetOutboundIP() net.IP {

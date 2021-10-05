@@ -3,6 +3,7 @@ package d7024e
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 )
 
 const (
@@ -11,32 +12,22 @@ const (
 )
 
 type Kademlia struct {
-	id *KademliaID
-	me Contact
-	rt *RoutingTable
+	Id        *KademliaID
+	Me        Contact
+	Rt        *RoutingTable
 	KeyValues []KeyValue
 }
 
 type KeyValue struct {
-	Key string
+	Key   string
 	Value string
 }
 
 func NewKademlia(ip string) (kademlia Kademlia) {
-	kademlia.id = NewKademliaID(kademlia.HashIt(ip))
-	kademlia.me = NewContact(kademlia.id, ip)
-	kademlia.rt = NewRoutingTable(kademlia.me)
+	kademlia.Id = NewKademliaID(kademlia.HashIt(ip))
+	kademlia.Me = NewContact(kademlia.Id, ip)
+	kademlia.Rt = NewRoutingTable(kademlia.Me)
 	return
-}
-
-//help function that hash data
-func (kademlia *Kademlia) HashIt(str string) string {
-	hashStr := sha1.New()
-	hashStr.Write([]byte(str))
-	hash := hex.EncodeToString(hashStr.Sum(nil))
-	//fmt.Println(hash)
-	return hash
-
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {
@@ -47,7 +38,7 @@ func (kademlia *Kademlia) LookupContact(target *Contact) {
 }
 
 func (kademlia *Kademlia) FindKClosest(target *Contact, k int) []Contact {
-	Kclosest := kademlia.rt.FindClosestContacts(target.ID, k)
+	Kclosest := kademlia.Rt.FindClosestContacts(target.ID, k)
 	return Kclosest
 }
 
@@ -72,3 +63,27 @@ func (kademlia *Kademlia) Store(data []byte) {
 		}
 	}
 */
+
+func (kademlia *Kademlia) InitRt(known *Contact) {
+	kademlia.Rt.AddContact(*known)
+	kademlia.LookupContact(&kademlia.Me)
+	fmt.Printf("Kademlia node joining network")
+}
+
+//help function that hash data
+func (kademlia *Kademlia) HashIt(str string) string {
+	hashStr := sha1.New()
+	hashStr.Write([]byte(str))
+	hash := hex.EncodeToString(hashStr.Sum(nil))
+	//fmt.Println(hash)
+	return hash
+
+}
+
+func HashIt(str string) string {
+	hashStr := sha1.New()
+	hashStr.Write([]byte(str))
+	hash := hex.EncodeToString(hashStr.Sum(nil))
+	//fmt.Println(hash)
+	return hash
+}
