@@ -1,28 +1,25 @@
 package d7024e
 
-const (
+const ( // RPC Operations
 	PING      = "PING"
 	FIND_NODE = "FIND_NODE"
 	FIND_DATA = "FIND_DATA"
 	STORE     = "STORE"
+	PONG      = "PONG"
+	FIND_NODE_REPLY = "FIND_NODE_REPLY"
+	FIND_DATA_REPLY = "FIND_DATA_REPLY"
+	STORE_REPLY = "STORE_REPLY"
 )
 
-type Ping struct {
-	Id      string
-	Address string
+type Message struct {
+	Id      string // Kadmelia ID.
+	RPC     string // RPC operation.
+	Address string // IP Adress.
+	Data    Data
 }
 
-type FindNode struct {
-	Id      string
-	Address string
-}
-
-type FindValue struct {
-}
-
-type Store struct {
-}
-
-func MsgHandler(channel chan []byte, me Contact, network Network) {
-
+type Data struct {
+	Nodes []Contact
+	Key   string
+	Value string
 }

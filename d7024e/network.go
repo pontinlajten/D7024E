@@ -1,9 +1,9 @@
 package d7024e
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
-	"net/rpc"
 	"sync"
 )
 
@@ -11,7 +11,7 @@ type Network struct {
 	me       *Contact
 	mutex    *sync.Mutex
 	rt       *RoutingTable
-	kademlia *Kademlia
+	kademlia *Kademlia // Used in Listen.
 }
 
 const (
@@ -29,8 +29,13 @@ func createNetwork(me *Contact, rt *RoutingTable, kademlia *Kademlia) Network {
 	return network
 }
 
+/////////////////////////////// RESPONSE /////////////////////////////////////////
+
+/*
+	TODO: Maybe implement channel model instead of mutex. RESEARCH.
+*/
 // IN-PROGRESS
-func (network *Network) Listen(me Contact, port int) { // Listen(ip string, port int) original.
+func (network *Network) Listen(ip string, port int, node Kademlia) { // Listen(ip string, port int) original.
 	raddr, err := net.ResolveUDPAddr(CONN_TYPE, ":8080") // ResolveUDPAddr(str, str). me.Address
 	conn, err2 := net.ListenUDP(CONN_TYPE, raddr)
 	if (err != nil) || (err2 != nil) {
@@ -46,49 +51,136 @@ func (network *Network) Listen(me Contact, port int) { // Listen(ip string, port
 		if err != nil {
 			fmt.Println("Error ReadFromUDP", err)
 		}
-		fmt.Printf("packet-received: bytes=%d from=%s\n", n, addr.String())
+		msg := network.MsgHandler(buffer[:n])
+		replyEncoded := marshall(msg)
+		sendResponse(replyEncoded, addr, conn)
 	}
 }
 
-func (network *Network) SendPingMessage(contact *Contact, destination net.UDPAddr) {
-	var pingReply Ping
-	msg := Ping{Id: contact.ID.String(), Address: contact.Address}
-	client, err := rpc.Dial("udp", destination.String())
-	if err != nil {
-		fmt.Printf("failed to dial %s error: %s", destination.String(), err)
+func (network *Network) MsgHandler(data []byte) Message {
+	decoded := unmarshall(data)
+	reply := Message{}
+	fmt.Println("RPC: " + decoded.RPC)
+
+	if decoded.RPC == FIND_NODE {
+		reply.Id = network.me.ID.String()
+		reply.RPC = FIND_NODE
+		reply.Address = network.me.Address
+		reply.Data.Nodes = network.FindNodeHandler(decoded)
+	} else if decoded.RPC == PING {
+		reply.Id = network.me.ID.String()
+		reply.RPC = PING
+		reply.Address = network.me.Address
+		network.PingHandler(decoded)
+	} else if decoded.RPC == FIND_DATA {
+		reply = network.FindValueHandler(decoded)
+	} else if decoded.RPC == STORE {
+		network.StoreHandler(decoded)
 	}
 
-	err = client.Call(PING, msg, pingReply)
-	if err != nil {
-		fmt.Printf("failed to PING %s error: %s", destination.String(), err)
-	} else {
-		newId := NewKademliaID(pingReply.Id)
-		newContact := NewContact(newId, pingReply.Address)
+	return reply
+}
+
+func (network *Network) PingHandler(msg Message) {
+	id := NewKademliaID(msg.Id)
+	newContact := NewContact(id, msg.Address)
+	network.rt.AddContact(newContact)
+}
+
+func (network *Network) FindNodeHandler(msg Message) []Contact {
+	contacts := network.rt.FindClosestContacts(NewKademliaID(msg.Id), ALPHA)
+	return contacts
+}
+
+func(network *Network) FindValueHandler(msg Message) Message {
+	keyVal := network.kademlia.LookupData(msg.Data.Key)
+	if(keyVal != nil) {
+		newId := NewKademliaID(msg.Id)
+		newContact := NewContact(newId, msg.Address)
 		network.rt.AddContact(newContact)
+		return Message{Id: network.me.ID.String(),RPC: FIND_DATA_REPLY,Address: network.me.Address, Data: Data{Key: keyVal.Key,Value: keyVal.Value}}
+
+	} else {
+		id := NewKademliaID(msg.Data.Key)
+		newContacts := network.rt.FindClosestContacts(id, ALPHA)
+
+		newId := NewKademliaID(msg.Id)
+		newContact := NewContact(newId, msg.Address)
+		network.rt.AddContact(newContact)
+		return Message{Id: network.me.ID.String(),RPC: FIND_DATA_REPLY,Address: network.me.Address,Data: Data{Nodes: newContacts}}
 	}
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact, destination net.UDPAddr) []Contact {
-	var findNodeReply FindNode
-	msg := FindNode{Id: contact.ID.String(), Address: contact.Address}
-	client, err := rpc.Dial("udp", destination.String())
+func(network *Network) StoreHandler(msg Message) {
+
+}
+
+func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
+	_, err := conn.WriteToUDP([]byte(responseMsg), addr)
 	if err != nil {
-		fmt.Printf("failed to dial %s error: %s", destination.String(), err)
-		return nil
+		fmt.Printf("Could'nt send response %v", err)
 	}
+}
 
-	err = client.Call(FIND_NODE, msg, findNodeReply)
+//////////////////////////////////////////////////////////////////////////////////
+
+func SendData(msg Message, contact *Contact) {
+	var rpcMsg string
+	sendMsg := marshall(msg)
+	Client, err := net.Dial("udp", contact.Address)
 	if err != nil {
-		fmt.Printf("failed to FIND NODE %s error: %s", destination.String(), err)
-		return nil
+		fmt.Printf("failed to dial %s error: %s", contact.Address, err)
 	}
+	switch msg.RPC {
+	case PING:
+		rpcMsg = PING
 
+	case FIND_NODE:
+		rpcMsg = FIND_NODE
+
+	case FIND_DATA:
+		rpcMsg = FIND_DATA
+
+	case STORE:
+		rpcMsg = STORE
+	}
+	defer Client.Close()
+	_, err = Client.Write(sendMsg)
+	if err != nil {
+		fmt.Printf("failed to %s to %s error: %s", rpcMsg, contact.Address, err)
+	}
 }
 
-func (network *Network) SendFindDataMessage(hash string) {
-	// TODO
+func (network *Network) SendPingMessage(contact *Contact) {
+	msg := Message{Id: network.me.ID.String(), RPC: PING, Address: network.me.Address}
+	SendData(msg, contact)
 }
 
-func (network *Network) SendStoreMessage(data []byte) {
-	// TODO
+func (network *Network) SendFindContactMessage(contact *Contact) {
+	msg := Message{Id: network.me.ID.String(), RPC: FIND_NODE, Address: network.me.Address}
+	SendData(msg, contact)
+}
+
+func (network *Network) SendFindDataMessage(hash string, contact *Contact) {
+	msg := Message{Id: network.me.ID.String(), Address: network.me.Address, RPC: FIND_DATA, Data: Data{Key: hash}}
+	SendData(msg, contact)
+}
+
+func (network *Network) SendStoreMessage(data string, contact *Contact) {
+	hash := network.kademlia.HashIt(data)
+	msg := Message{Address: network.me.Address, RPC: STORE, Data: Data{Key: hash, Value: data}}
+	SendData(msg, contact)
+}
+
+/////////////////////// HELP FUNCTIONS //////////////////////////
+
+func marshall(msg Message) []byte {
+	encoded, _ := json.Marshal(msg)
+	return encoded
+}
+
+func unmarshall(data []byte) Message {
+	var decoded Message
+	json.Unmarshal([]byte(data), &decoded)
+	return decoded
 }
