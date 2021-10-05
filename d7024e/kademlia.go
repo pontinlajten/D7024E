@@ -20,7 +20,7 @@ type Kademlia struct {
 type LookedAt struct {
 }
 
-func (kademlia *Kademlia) NewKademlia(ip string) {
+func NewKademlia(ip string) (kademlia Kademlia) {
 	kademlia.id = NewKademliaID(kademlia.HashIt(ip))
 	kademlia.me = NewContact(kademlia.id, ip)
 	kademlia.rt = NewRoutingTable(kademlia.me)
