@@ -44,7 +44,6 @@ func main() {
 
 	network := kad.Network{}
 	network.Kademlia = &me
-	//fmt.Println(newNode)
 
 }
 
