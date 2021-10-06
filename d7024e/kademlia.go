@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	// fanns redan en bucketSize i rt //k int = 20 // num of cont in bucket
-	ALPHA = 3 //(alpha) degree of parallelism in network calls
+	K     = 20 // num of cont in bucket
+	ALPHA = 3  //(alpha) degree of parallelism in network calls
 )
 
 type Kademlia struct {
@@ -31,15 +31,19 @@ func NewKademlia(ip string) (kademlia Kademlia) {
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {
-	//kClosest := kademlia.rt.FindClosestContacts(target.ID, k)
-	kademlia.FindKClosest(target, bucketSize)
+	kClosest := kademlia.FindXClosest(target, K)
+	aClosest := kademlia.FindXClosest(target, ALPHA)
+
+	if len(kClosest) > ALPHA {
+
+	}
 
 	return
 }
 
-func (kademlia *Kademlia) FindKClosest(target *Contact, k int) []Contact {
-	Kclosest := kademlia.Rt.FindClosestContacts(target.ID, k)
-	return Kclosest
+func (kademlia *Kademlia) FindXClosest(target *Contact, x int) []Contact {
+	xClosest := kademlia.Rt.FindClosestContacts(target.ID, x)
+	return xClosest
 }
 
 func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
