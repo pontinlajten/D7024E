@@ -39,27 +39,13 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 
 	ch := make(chan []Contact)
 
-	kList := kademlia.FindXClosest(target, K)
+	List := kademlia.FindXClosest(target, K)
 	//aClosest := kademlia.FindXClosest(target, ALPHA)
-	if len(kList) < ALPHA {
+	if len(List) < ALPHA {
 
 	}
 
 	return
-}
-
-// creates New list with x closest
-func (kademlia *Kademlia) FindXClosest(target *Contact, x int) []Contact {
-	xClosest := kademlia.Rt.FindClosestContacts(target.ID, x)
-	return xClosest
-}
-
-func UpdateList() {
-
-}
-
-func RecieverResponse() {
-
 }
 
 //---------------------------------------------------------//
