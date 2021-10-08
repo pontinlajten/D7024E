@@ -64,7 +64,7 @@ func (network *Network) MsgHandler(data []byte) Message {
 
 	if decoded.RPC == FIND_NODE {
 		reply.Id = network.Me.ID.String()
-		reply.RPC = FIND_NODE
+		reply.RPC = FIND_NODE_REPLY
 		reply.Address = network.Me.Address
 		reply.Data.Nodes = network.FindNodeHandler(decoded)
 
@@ -74,19 +74,18 @@ func (network *Network) MsgHandler(data []byte) Message {
 		reply.Address = network.Me.Address
 		network.PingHandler(decoded)
 
+	} else if decoded.RPC == PONG {
+		network.PongHandler(decoded)
+
 	} else if decoded.RPC == FIND_DATA {
 		reply = network.FindValueHandler(decoded)
 
-	} else if decoded.RPC == STORE {
+	}  else if decoded.RPC == STORE {
 		network.StoreHandler(decoded)
 		reply.Id = network.Me.ID.String()
 		reply.RPC = STORE_REPLY
 		reply.Address = network.Me.Address
-
-	} else if decoded.RPC == PONG {
-
 	}
-
 	return reply
 }
 
@@ -96,9 +95,22 @@ func (network *Network) PingHandler(msg Message) {
 	network.Rt.AddContact(newContact)
 }
 
+
+func (network *Network) PongHandler(msg Message) {
+	id := NewKademliaID(msg.Id)
+	newContact := NewContact(id, msg.Address)
+	network.Rt.AddContact(newContact)
+}
+
 func (network *Network) FindNodeHandler(msg Message) []Contact {
-	contacts := network.Rt.FindClosestContacts(NewKademliaID(msg.Id), ALPHA)
-	return contacts
+	id := NewKademliaID(msg.Data.Key)
+	newContacts := network.Rt.FindClosestContacts(id, ALPHA)
+
+	newId := NewKademliaID(msg.Id)
+	newContact := NewContact(newId, msg.Address)
+	network.Rt.AddContact(newContact)
+
+	return newContacts
 }
 
 func (network *Network) FindValueHandler(msg Message) Message {
