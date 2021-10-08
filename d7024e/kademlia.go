@@ -33,22 +33,17 @@ func NewKademlia(ip string) (kademlia Kademlia) {
 	return
 }
 
-func (kademlia *Kademlia) LookupContact(target *Contact) {
+//---------------------------------------------------------//
+
+func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 
 	ch := make(chan []Contact)
 
-	if len() > ALPHA {
+	kList := kademlia.FindXClosest(target, K)
+	//aClosest := kademlia.FindXClosest(target, ALPHA)
+	if len(kList) < ALPHA {
 
 	}
-
-	/*
-		kClosest := kademlia.FindXClosest(target, K)
-		aClosest := kademlia.FindXClosest(target, ALPHA)
-
-		if len(kClosest) > ALPHA {
-
-		}
-	*/
 
 	return
 }
@@ -57,6 +52,10 @@ func (kademlia *Kademlia) FindXClosest(target *Contact, x int) []Contact {
 	xClosest := kademlia.Rt.FindClosestContacts(target.ID, x)
 	return xClosest
 }
+
+func RecieverResponse(target KademliaID, reciver Contact, network Network)
+
+//---------------------------------------------------------//
 
 func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
 	for _, keyVal := range kademlia.KeyValues {
@@ -67,6 +66,7 @@ func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
 	return nil
 }
 
+//---------------------------------------------------------//
 func (kademlia *Kademlia) Store(value string) {
 	hash := HashIt(value)
 	for _, keyVal := range kademlia.KeyValues {
@@ -82,6 +82,7 @@ func (kademlia *Kademlia) Store(value string) {
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
 }
 
+//---------------------------------------------------------//
 func (kademlia *Kademlia) InitRt(known *Contact) {
 	kademlia.Rt.AddContact(*known)
 	kademlia.LookupContact(&kademlia.Me)
@@ -105,3 +106,5 @@ func HashIt(str string) string {
 	//fmt.Println(hash)
 	return hash
 }
+
+//---------------------------------------------------------//
