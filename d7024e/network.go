@@ -112,6 +112,7 @@ func (network *Network) FindValueHandler(msg Message) Message {
 }
 
 func (network *Network) StoreHandler(msg Message) {
+	network.Kademlia.Store(msg.Data.Value)
 
 }
 
@@ -166,9 +167,8 @@ func (network *Network) SendFindDataMessage(hash string, contact *Contact) {
 	SendData(msg, contact)
 }
 
-func (network *Network) SendStoreMessage(data string, contact *Contact) {
-	hash := network.Kademlia.HashIt(data)
-	msg := Message{Address: network.Me.Address, RPC: STORE, Data: Data{Key: hash, Value: data}}
+func (network *Network) SendStoreMessage(value string, contact *Contact) {
+	msg := Message{Address: network.Me.Address, RPC: STORE, Data: Data{Value: value}}
 	SendData(msg, contact)
 }
 
