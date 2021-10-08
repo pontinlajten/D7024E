@@ -27,7 +27,7 @@ type KeyValue struct {
 }
 
 func NewKademlia(ip string) (kademlia Kademlia) {
-	kademlia.Id = NewKademliaID(HashIt(ip))
+	kademlia.Id = NewKademliaID(kademlia.HashIt(ip))
 	kademlia.Me = NewContact(kademlia.Id, ip)
 	kademlia.Rt = NewRoutingTable(kademlia.Me)
 	return
@@ -48,12 +48,19 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	return
 }
 
+// creates New list with x closest
 func (kademlia *Kademlia) FindXClosest(target *Contact, x int) []Contact {
 	xClosest := kademlia.Rt.FindClosestContacts(target.ID, x)
 	return xClosest
 }
 
-func RecieverResponse(target KademliaID, reciver Contact, network Network)
+func UpdateList() {
+
+}
+
+func RecieverResponse() {
+
+}
 
 //---------------------------------------------------------//
 
@@ -87,6 +94,16 @@ func (kademlia *Kademlia) InitRt(known *Contact) {
 	kademlia.Rt.AddContact(*known)
 	kademlia.LookupContact(&kademlia.Me)
 	fmt.Printf("Kademlia node joining network")
+}
+
+//help function that hash data
+func (kademlia *Kademlia) HashIt(str string) string {
+	hashStr := sha1.New()
+	hashStr.Write([]byte(str))
+	hash := hex.EncodeToString(hashStr.Sum(nil))
+	//fmt.Println(hash)
+	return hash
+
 }
 
 func HashIt(str string) string {
