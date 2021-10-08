@@ -8,9 +8,9 @@ import (
 
 const (
 	// fanns redan en bucketSize i rt //k int = 20 // num of cont in bucket
-	ALPHA = 3 //(alpha) degree of parallelism in network calls
+	ALPHA     = 3 //(alpha) degree of parallelism in network calls
 	REBUPLISH = 24
-	K = 20
+	K         = 20 // num of cont in bucket
 )
 
 type Kademlia struct {
@@ -21,8 +21,8 @@ type Kademlia struct {
 }
 
 type KeyValue struct {
-	Key   string
-	Value string
+	Key       string
+	Value     string
 	TimeStamp int
 }
 
@@ -34,15 +34,28 @@ func NewKademlia(ip string) (kademlia Kademlia) {
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {
-	//kClosest := kademlia.rt.FindClosestContacts(target.ID, k)
-	kademlia.FindKClosest(target, bucketSize)
+
+	ch := make(chan []Contact)
+
+	if len(ch) > ALPHA {
+
+	}
+
+	/*
+		kClosest := kademlia.FindXClosest(target, K)
+		aClosest := kademlia.FindXClosest(target, ALPHA)
+
+		if len(kClosest) > ALPHA {
+
+		}
+	*/
 
 	return
 }
 
-func (kademlia *Kademlia) FindKClosest(target *Contact, k int) []Contact {
-	Kclosest := kademlia.Rt.FindClosestContacts(target.ID, k)
-	return Kclosest
+func (kademlia *Kademlia) FindXClosest(target *Contact, x int) []Contact {
+	xClosest := kademlia.Rt.FindClosestContacts(target.ID, x)
+	return xClosest
 }
 
 func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
@@ -57,7 +70,7 @@ func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
 func (kademlia *Kademlia) Store(value string) {
 	hash := HashIt(value)
 	for _, keyVal := range kademlia.KeyValues {
-		if(hash == keyVal.Key) {
+		if hash == keyVal.Key {
 			keyVal.TimeStamp = REBUPLISH
 			return
 		}
@@ -68,8 +81,6 @@ func (kademlia *Kademlia) Store(value string) {
 	newKeyValue.TimeStamp = 24
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
 }
-
-
 
 func (kademlia *Kademlia) InitRt(known *Contact) {
 	kademlia.Rt.AddContact(*known)
