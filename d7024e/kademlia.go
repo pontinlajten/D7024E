@@ -7,14 +7,10 @@ import (
 )
 
 const (
-<<<<<<< HEAD
-	K     = 20 // num of cont in bucket
-	ALPHA = 3  //(alpha) degree of parallelism in network calls
-=======
 	// fanns redan en bucketSize i rt //k int = 20 // num of cont in bucket
-	ALPHA = 3 //(alpha) degree of parallelism in network calls
+	ALPHA     = 3 //(alpha) degree of parallelism in network calls
 	REBUPLISH = 24
->>>>>>> origin/network
+	K         = 20 // num of cont in bucket
 )
 
 type Kademlia struct {
@@ -25,8 +21,8 @@ type Kademlia struct {
 }
 
 type KeyValue struct {
-	Key   string
-	Value string
+	Key       string
+	Value     string
 	TimeStamp int
 }
 
@@ -74,7 +70,7 @@ func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
 func (kademlia *Kademlia) Store(value string) {
 	hash := HashIt(value)
 	for _, keyVal := range kademlia.KeyValues {
-		if(hash == keyVal.Key) {
+		if hash == keyVal.Key {
 			keyVal.TimeStamp = REBUPLISH
 			return
 		}
@@ -85,8 +81,6 @@ func (kademlia *Kademlia) Store(value string) {
 	newKeyValue.TimeStamp = 24
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
 }
-
-
 
 func (kademlia *Kademlia) InitRt(known *Contact) {
 	kademlia.Rt.AddContact(*known)
