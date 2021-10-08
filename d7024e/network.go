@@ -67,15 +67,24 @@ func (network *Network) MsgHandler(data []byte) Message {
 		reply.RPC = FIND_NODE
 		reply.Address = network.Me.Address
 		reply.Data.Nodes = network.FindNodeHandler(decoded)
+
 	} else if decoded.RPC == PING {
 		reply.Id = network.Me.ID.String()
-		reply.RPC = PING
+		reply.RPC = PONG
 		reply.Address = network.Me.Address
 		network.PingHandler(decoded)
+
 	} else if decoded.RPC == FIND_DATA {
 		reply = network.FindValueHandler(decoded)
+
 	} else if decoded.RPC == STORE {
 		network.StoreHandler(decoded)
+		reply.Id = network.Me.ID.String()
+		reply.RPC = STORE_REPLY
+		reply.Address = network.Me.Address
+
+	} else if decoded.RPC == PONG {
+
 	}
 
 	return reply
@@ -113,7 +122,6 @@ func (network *Network) FindValueHandler(msg Message) Message {
 
 func (network *Network) StoreHandler(msg Message) {
 	network.Kademlia.Store(msg.Data.Value)
-
 }
 
 func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {

@@ -10,6 +10,7 @@ const (
 	// fanns redan en bucketSize i rt //k int = 20 // num of cont in bucket
 	ALPHA = 3 //(alpha) degree of parallelism in network calls
 	REBUPLISH = 24
+	K = 20
 )
 
 type Kademlia struct {
