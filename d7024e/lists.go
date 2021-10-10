@@ -5,7 +5,7 @@ import (
 )
 
 type Lookup struct {
-	Con   []Item
+	Cons  []Item
 	Mutex sync.Mutex
 }
 
@@ -37,9 +37,32 @@ func (kademlia *Kademlia) NewList(target *Contact) (list *List) {
 }
 
 func (list *List) UpdateList(ID KademliaID, ch chan []Contact, net Network) {
+	for {
 
+		copyOfList := list.Cons
+		responeList := List{}
+
+		cons := <-ch
+
+		for _, con := range cons {
+			item := Item{con, false}
+			responeList.Cons = append(responeList.Cons, item)
+		}
+
+		//SortIt()
+	}
+}
+
+func SortIt(List1 []Contact, List2 []Contact) []Contact {
+	Sorted := List{}
+	Sorted.Append(List2)
+	Sorted.Append(List.Cons)
+	Sorted.Sort()
+	return Sorted
 }
 
 func RecieverResponse() {
 
 }
+
+//REMAKE OF FUNCS FROM CONTACT//
