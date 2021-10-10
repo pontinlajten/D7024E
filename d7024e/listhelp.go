@@ -33,5 +33,5 @@ func (candidates *Lookup) Swap(i, j int) {
 // Less returns true if the Contact at index i is smaller than
 // the Contact at index j
 func (candidates *Lookup) Less(i, j int) bool {
-	return candidates.Cons[i].Less(&candidates.Cons[j])
+	return candidates.Cons[i].Con.Less(&candidates.Cons[j].Con)
 }

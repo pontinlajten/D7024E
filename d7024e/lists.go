@@ -4,6 +4,7 @@ import (
 	"sync"
 )
 
+//lookup list
 type Lookup struct {
 	Cons  []Item
 	Mutex sync.Mutex
@@ -39,8 +40,8 @@ func (kademlia *Kademlia) NewList(target *Contact) (list *List) {
 func (list *List) UpdateList(ID KademliaID, ch chan []Contact, net Network) {
 	for {
 
-		copyOfList := list.Cons
-		responeList := List{}
+		copyOfList := list.Cons //templist2
+		responeList := List{}   //templist
 
 		cons := <-ch
 
@@ -49,20 +50,27 @@ func (list *List) UpdateList(ID KademliaID, ch chan []Contact, net Network) {
 			responeList.Cons = append(responeList.Cons, item)
 		}
 
-		//SortIt()
+		SortedList := list.SortIt(copyOfList, responeList.Cons)
+
+		if len(SortedList.Cons) >= K {
+			list.Cons = SortedList.GetContacts(K)
+		} else {
+			list.Cons = SortedList.GetContacts(len(SortedList.Cons))
+
+		}
+		//more to do
 	}
 }
 
-func SortIt(List1 []Contact, List2 []Contact) []Contact {
-	Sorted := List{}
-	Sorted.Append(List2)
-	Sorted.Append(List.Cons)
-	Sorted.Sort()
-	return Sorted
+func (list *List) SortIt(list1 []Item, list2 []Item) Lookup {
+	sorted := Lookup{}
+	sorted.Append(list1)
+	sorted.Append(list2)
+	sorted.Sort()
+	return sorted
 }
 
-func RecieverResponse() {
-
+func RecieverResponse(reciver Contact, nt Network, ch chan []Contact) {
+	response, _ := nt.SendFindContactMessage(&reciver)
+	ch <- response
 }
-
-//REMAKE OF FUNCS FROM CONTACT//
