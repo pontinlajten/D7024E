@@ -36,7 +36,7 @@ func (kademlia *Kademlia) NewList(target *Contact) (list *List) {
 	return
 }
 
-func UpdateList() {
+func (list *List) UpdateList(ID KademliaID, ch chan []Contact, net Network) {
 
 }
 
