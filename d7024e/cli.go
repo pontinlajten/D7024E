@@ -32,6 +32,22 @@ func (cli *cli) Run() {
 		return
 	case "PUT":
 		if len(inputSplit) == 2 {
+			upload := inputSplit[1]
+			fmt.Println(upload)
+
+			cli.Network.Kademlia.Store(upload)
+
+			//h_uploaded := cli.Network.Kademlia.HashIt(upload)
+
+			//response := cli.Network.SendFindDataMessage(h_uploaded, &cli.Network.Kademlia.Me)
+			/*
+				if response {
+					fmt.Println("Uploaded succesfully! Hashed: ")
+					fmt.Println(h_uploaded)
+				} else {
+
+				}
+			*/
 
 		} else {
 			fmt.Println("Invalid arguments for PUT...")

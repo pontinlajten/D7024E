@@ -8,9 +8,7 @@ import (
 )
 
 type Network struct {
-	Me       *Contact
 	Mutex    *sync.Mutex
-	Rt       *RoutingTable
 	Kademlia *Kademlia // Used in Listen.
 }
 
@@ -20,11 +18,9 @@ const (
 )
 
 // Template for init. an network.
-func createNetwork(me *Contact, rt *RoutingTable, kademlia *Kademlia) Network {
+func createNetwork(kademlia *Kademlia) Network {
 	network := Network{} // Create from Network struct
-	network.Me = me
 	network.Mutex = &sync.Mutex{}
-	network.Rt = rt
 	network.Kademlia = kademlia
 	return network
 }
@@ -63,15 +59,15 @@ func (network *Network) MsgHandler(data []byte) Message {
 	fmt.Println("RPC: " + decoded.RPC)
 
 	if decoded.RPC == FIND_NODE {
-		reply.Id = network.Me.ID.String()
+		reply.Id = network.Kademlia.Me.ID.String()
 		reply.RPC = FIND_NODE_REPLY
-		reply.Address = network.Me.Address
+		reply.Address = network.Kademlia.Me.Address
 		reply.Data.Nodes = network.FindNodeHandler(decoded)
 
 	} else if decoded.RPC == PING {
-		reply.Id = network.Me.ID.String()
+		reply.Id = network.Kademlia.Me.ID.String()
 		reply.RPC = PONG
-		reply.Address = network.Me.Address
+		reply.Address = network.Kademlia.Me.Address
 		network.PingHandler(decoded)
 
 	} else if decoded.RPC == PONG {
@@ -82,9 +78,9 @@ func (network *Network) MsgHandler(data []byte) Message {
 
 	} else if decoded.RPC == STORE {
 		network.StoreHandler(decoded)
-		reply.Id = network.Me.ID.String()
+		reply.Id = network.Kademlia.Me.ID.String()
 		reply.RPC = STORE_REPLY
-		reply.Address = network.Me.Address
+		reply.Address = network.Kademlia.Me.Address
 	}
 	return reply
 }
@@ -92,22 +88,22 @@ func (network *Network) MsgHandler(data []byte) Message {
 func (network *Network) PingHandler(msg Message) {
 	id := NewKademliaID(msg.Id)
 	newContact := NewContact(id, msg.Address)
-	network.Rt.AddContact(newContact)
+	network.Kademlia.Rt.AddContact(newContact)
 }
 
 func (network *Network) PongHandler(msg Message) {
 	id := NewKademliaID(msg.Id)
 	newContact := NewContact(id, msg.Address)
-	network.Rt.AddContact(newContact)
+	network.Kademlia.Rt.AddContact(newContact)
 }
 
 func (network *Network) FindNodeHandler(msg Message) []Contact {
 	id := NewKademliaID(msg.Data.Key)
-	newContacts := network.Rt.FindClosestContacts(id, ALPHA)
+	newContacts := network.Kademlia.Rt.FindClosestContacts(id, ALPHA)
 
 	newId := NewKademliaID(msg.Id)
 	newContact := NewContact(newId, msg.Address)
-	network.Rt.AddContact(newContact)
+	network.Kademlia.Rt.AddContact(newContact)
 
 	return newContacts
 }
@@ -117,17 +113,17 @@ func (network *Network) FindValueHandler(msg Message) Message {
 	if keyVal != nil {
 		newId := NewKademliaID(msg.Id)
 		newContact := NewContact(newId, msg.Address)
-		network.Rt.AddContact(newContact)
-		return Message{Id: network.Me.ID.String(), RPC: FIND_DATA_REPLY, Address: network.Me.Address, Data: Data{Key: keyVal.Key, Value: keyVal.Value}}
+		network.Kademlia.Rt.AddContact(newContact)
+		return Message{Id: network.Kademlia.Me.ID.String(), RPC: FIND_DATA_REPLY, Address: network.Kademlia.Me.Address, Data: Data{Key: keyVal.Key, Value: keyVal.Value}}
 
 	} else {
 		id := NewKademliaID(msg.Data.Key)
-		newContacts := network.Rt.FindClosestContacts(id, ALPHA)
+		newContacts := network.Kademlia.Rt.FindClosestContacts(id, ALPHA)
 
 		newId := NewKademliaID(msg.Id)
 		newContact := NewContact(newId, msg.Address)
-		network.Rt.AddContact(newContact)
-		return Message{Id: network.Me.ID.String(), RPC: FIND_DATA_REPLY, Address: network.Me.Address, Data: Data{Nodes: newContacts}}
+		network.Kademlia.Rt.AddContact(newContact)
+		return Message{Id: network.Kademlia.Me.ID.String(), RPC: FIND_DATA_REPLY, Address: network.Kademlia.Me.Address, Data: Data{Nodes: newContacts}}
 	}
 }
 
@@ -172,22 +168,22 @@ func SendData(msg Message, contact *Contact) {
 }
 
 func (network *Network) SendPingMessage(contact *Contact) {
-	msg := Message{Id: network.Me.ID.String(), RPC: PING, Address: network.Me.Address}
+	msg := Message{Id: network.Kademlia.Me.ID.String(), RPC: PING, Address: network.Kademlia.Me.Address}
 	SendData(msg, contact)
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact) {
-	msg := Message{Id: network.Me.ID.String(), RPC: FIND_NODE, Address: network.Me.Address}
+	msg := Message{Id: network.Kademlia.Me.ID.String(), RPC: FIND_NODE, Address: network.Kademlia.Me.Address}
 	SendData(msg, contact)
 }
 
 func (network *Network) SendFindDataMessage(hash string, contact *Contact) {
-	msg := Message{Id: network.Me.ID.String(), Address: network.Me.Address, RPC: FIND_DATA, Data: Data{Key: hash}}
+	msg := Message{Id: network.Kademlia.Me.ID.String(), Address: network.Kademlia.Me.Address, RPC: FIND_DATA, Data: Data{Key: hash}}
 	SendData(msg, contact)
 }
 
 func (network *Network) SendStoreMessage(value string, contact *Contact) {
-	msg := Message{Address: network.Me.Address, RPC: STORE, Data: Data{Value: value}}
+	msg := Message{Address: network.Kademlia.Me.Address, RPC: STORE, Data: Data{Value: value}}
 	SendData(msg, contact)
 }
 
