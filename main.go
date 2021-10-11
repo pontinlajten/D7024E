@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	port        = "10000"
+	port        = "1000"
 	bootstrapIp = "172.20.0.2"
 )
 
@@ -52,6 +52,9 @@ func main() {
 	}
 
 	go network.Listen(port)
+
+	cli := kad.NewCli(&network)
+	cli.Run()
 }
 
 func GetOutboundIP() net.IP {

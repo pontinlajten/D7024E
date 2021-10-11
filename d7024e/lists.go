@@ -70,7 +70,9 @@ func (list *List) SortIt(list1 []Item, list2 []Item) Lookup {
 	return sorted
 }
 
+/*
 func RecieverResponse(reciver Contact, nt Network, ch chan []Contact) {
 	response, _ := nt.SendFindContactMessage(&reciver)
 	ch <- response
 }
+*/

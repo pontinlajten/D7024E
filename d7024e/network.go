@@ -36,7 +36,7 @@ func createNetwork(me *Contact, rt *RoutingTable, kademlia *Kademlia) Network {
 */
 // IN-PROGRESS
 func (network *Network) Listen(port string) { // Listen(ip string, port int) original.
-	raddr, err := net.ResolveUDPAddr(CONN_TYPE, port) // ResolveUDPAddr(str, str). me.Address
+	raddr, err := net.ResolveUDPAddr(CONN_TYPE, ":"+port) // ResolveUDPAddr(str, str). me.Address
 	conn, err2 := net.ListenUDP(CONN_TYPE, raddr)
 	if (err != nil) || (err2 != nil) {
 		fmt.Println("Error udp: ", err, "    ", err2)

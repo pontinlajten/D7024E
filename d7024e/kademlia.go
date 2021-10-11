@@ -36,17 +36,16 @@ func NewKademlia(ip string) (kademlia Kademlia) {
 //---------------------------------------------------------//
 
 func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
-
-	ch := make(chan []Contact)
+	//ch := make(chan []Contact)
 	net := &Network{}
 	net.Kademlia = kademlia
 	List := kademlia.FindXClosest(target, K)
-	//aClosest := kademlia.FindXClosest(target, ALPHA)
+	aClosest := kademlia.FindXClosest(target, ALPHA)
 	if len(List) < ALPHA {
 
 	}
 
-	return
+	return aClosest
 }
 
 //---------------------------------------------------------//
