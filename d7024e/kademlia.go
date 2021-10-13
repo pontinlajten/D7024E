@@ -23,7 +23,7 @@ type Kademlia struct {
 type KeyValue struct {
 	Key       string
 	Value     string
-	TimeStamp int
+	//TimeStamp int
 }
 
 func NewKademlia(ip string) (kademlia Kademlia) {
@@ -59,20 +59,31 @@ func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
 	return nil
 }
 
+
+func (Kademlia *Kademlia) GetContact() Contact {
+	aClosest := Kademlia.LookupContact(&Kademlia.Me)
+	var destContact Contact
+	destContact = aClosest[0]
+	return destContact
+}
+
 //---------------------------------------------------------//
 func (kademlia *Kademlia) Store(value string) {
 	hash := HashIt(value)
 	for _, keyVal := range kademlia.KeyValues {
 		if hash == keyVal.Key {
-			keyVal.TimeStamp = REBUPLISH
+			//keyVal.TimeStamp = REBUPLISH
+			fmt.Printf("Value is already existing")
 			return
 		}
 	}
 	var newKeyValue KeyValue
 	newKeyValue.Key = hash
 	newKeyValue.Value = value
-	newKeyValue.TimeStamp = 24
+	//newKeyValue.TimeStamp = 24
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
+
+
 }
 
 //---------------------------------------------------------//

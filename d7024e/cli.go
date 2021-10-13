@@ -35,8 +35,10 @@ func (cli *cli) Run() {
 			upload := inputSplit[1]
 			fmt.Println(upload)
 
-			cli.Network.Kademlia.Store(upload)
+			//cli.Network.Kademlia.Store(upload)
 
+			destContact := cli.Network.Kademlia.GetContact()
+			cli.Network.SendStoreMessage(upload, &destContact)
 			//h_uploaded := cli.Network.Kademlia.HashIt(upload)
 
 			//response := cli.Network.SendFindDataMessage(h_uploaded, &cli.Network.Kademlia.Me)
