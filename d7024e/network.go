@@ -1,5 +1,6 @@
 package d7024e
 
+import "C"
 import (
 	"encoding/json"
 	"fmt"
@@ -161,7 +162,10 @@ func SendData(msg Message, contact *Contact) {
 		rpcMsg = STORE
 	}
 	defer Client.Close()
+<<<<<<< HEAD
 	_, err = Client.Write(sendMsg)
+=======
+>>>>>>> 3c79d2bc29abd1f7aa4b4fb519570365fc81ff7a
 
 	Client.Write(sendMsg)
 
