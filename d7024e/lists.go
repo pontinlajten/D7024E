@@ -1,6 +1,7 @@
 package d7024e
 
 import (
+	"sort"
 	"sync"
 )
 
@@ -26,11 +27,12 @@ func (kademlia *Kademlia) FindXClosest(target *Contact, x int) []Contact {
 	return xClosest
 }
 
-func (kademlia *Kademlia) NewList(target *Contact) (list *List) {
+func (kademlia *Kademlia) NewList(targetID *KademliaID) (list *List) {
 	list = &List{}
-	klist := kademlia.FindXClosest(target, bucketSize)
 
-	for _, item := range klist {
+	closestK := kademlia.Rt.FindClosestContacts(targetID, bucketSize)
+
+	for _, item := range closestK {
 		listitem := &Item{item, false}
 		list.Cons = append(list.Cons, *listitem)
 	}
@@ -76,3 +78,39 @@ func RecieverResponse(reciver Contact, nt Network, ch chan []Contact) {
 	ch <- response
 }
 */
+
+// Append an array of Contacts to the ContactCandidates
+func (candidates *Lookup) Append(contacts []Item) {
+	candidates.Cons = append(candidates.Cons, contacts...)
+}
+
+// GetContacts returns the first count number of Contacts
+func (candidates *Lookup) GetContacts(count int) []Item {
+	return candidates.Cons[:count]
+}
+
+// Sort the Contacts in ContactCandidates
+func (candidates *Lookup) Sort() {
+	sort.Sort(candidates)
+}
+
+// Len returns the length of the ContactCandidates
+func (candidates *Lookup) Len() int {
+	return len(candidates.Cons)
+}
+
+func (candidates *List) Len() int {
+	return len(candidates.Cons)
+}
+
+// Swap the position of the Contacts at i and j
+// WARNING does not check if either i or j is within range
+func (candidates *Lookup) Swap(i, j int) {
+	candidates.Cons[i], candidates.Cons[j] = candidates.Cons[j], candidates.Cons[i]
+}
+
+// Less returns true if the Contact at index i is smaller than
+// the Contact at index j
+func (candidates *Lookup) Less(i, j int) bool {
+	return candidates.Cons[i].Con.Less(&candidates.Cons[j].Con)
+}

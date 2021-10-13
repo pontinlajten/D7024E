@@ -35,17 +35,37 @@ func NewKademlia(ip string) (kademlia Kademlia) {
 
 //---------------------------------------------------------//
 
-func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
+func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Contact) {
 	//ch := make(chan []Contact)
 	net := &Network{}
 	net.Kademlia = kademlia
-	List := kademlia.FindXClosest(target, K)
-	aClosest := kademlia.FindXClosest(target, ALPHA)
-	if len(List) < ALPHA {
+	channel := make(chan []Contact)
 
+	// shortlist of k-closest nodes
+	shortlist := kademlia.NewList(targetID)
+
+	// if LookupContact on JoinNetwork
+	if shortlist.Len() < ALPHA {
+		go reciverResponse(shortlist.Cons[0].Con, *net, channel)
+	} else {
+		// sending RPCs to the alpha nodes async
+		for i := 0; i < ALPHA; i++ {
+			go reciverResponse(shortlist.Cons[i].Con, *net, channel)
+		}
 	}
 
-	return aClosest
+	shortlist.UpdateList(*targetID, channel, *net)
+
+	// creating the result list
+	for _, insItem := range shortlist.Cons {
+		resultlist = append(resultlist, insItem.Con)
+	}
+	return
+}
+
+func reciverResponse(reciver Contact, net Network, channel chan []Contact) {
+	response, _ := net.SendFindContactMessage(&reciver)
+	channel <- response
 }
 
 //---------------------------------------------------------//
@@ -60,25 +80,34 @@ func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
 }
 
 //---------------------------------------------------------//
-func (kademlia *Kademlia) Store(value string) {
+func (kademlia *Kademlia) Store(upload string) {
+	network := &Network{}
+	destContacts := kademlia.LookupContact(&kademlia.Me)
+	for _, destContact := range destContacts {
+		network.SendStoreMessage(upload, &destContact)
+	}
+}
+
+func (kademlia *Kademlia) StoreKeyValue(value string) {
 	hash := HashIt(value)
 	for _, keyVal := range kademlia.KeyValues {
 		if hash == keyVal.Key {
-			keyVal.TimeStamp = REBUPLISH
+			//keyVal.TimeStamp = REBUPLISH
+			fmt.Printf("Value is already existing")
 			return
 		}
 	}
 	var newKeyValue KeyValue
 	newKeyValue.Key = hash
 	newKeyValue.Value = value
-	newKeyValue.TimeStamp = 24
+	//newKeyValue.TimeStamp = 24
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
 }
 
 //---------------------------------------------------------//
 func (kademlia *Kademlia) InitRt(known *Contact) {
 	kademlia.Rt.AddContact(*known)
-	kademlia.LookupContact(&kademlia.Me)
+	kademlia.LookupContact(kademlia.Me.ID)
 	fmt.Printf("Kademlia node joining network")
 }
 
