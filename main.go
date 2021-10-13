@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	port        = "10000"
+	port        = "1000"
 	bootstrapIp = "172.20.0.2"
 )
 
@@ -29,18 +29,31 @@ func main() {
 
 	nodeIp := GetOutboundIP()
 
-	bsNode := bootstrapIp + ":" + port
+	bsIP := bootstrapIp + ":" + port
 
-	node := nodeIp.String() + ":" + port
+	localIP := nodeIp.String() + ":" + port
 
-	fmt.Println("BootStrap ip:", bsNode)
-	fmt.Println("New ip:", node)
+	fmt.Println("BootStrap ip:", bsIP)
+	fmt.Println("New ip:", localIP)
 
-	// network := &kad.Network{}
+	bsID := kad.NewKademliaID(kad.HashIt(bsIP))
+	bsContact := kad.NewContact(bsID, bsIP)
 
-	// go network.Listen()
-	newNode := kad.NewKademlia(node)
-	fmt.Println(newNode)
+	me := kad.NewKademlia(localIP)
+	me.InitRt(&bsContact)
+
+	network := kad.CreateNetwork(&me)
+
+	if localIP != bsIP {
+		newContact := kad.NewContact(kad.NewKademliaID(kad.HashIt(bsIP)), bsIP)
+		me.InitRt(&newContact)
+		fmt.Printf("\nRoutingtable: %x\n", me.Rt.FindClosestContacts(me.Me.ID, 4))
+	}
+
+	go network.Listen(port)
+
+	cli := kad.NewCli(&network)
+	cli.Run()
 }
 
 func GetOutboundIP() net.IP {
