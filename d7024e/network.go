@@ -1,5 +1,6 @@
 package d7024e
 
+import "C"
 import (
 	"encoding/json"
 	"fmt"
@@ -128,7 +129,7 @@ func (network *Network) FindValueHandler(msg Message) Message {
 }
 
 func (network *Network) StoreHandler(msg Message) {
-	network.Kademlia.Store(msg.Data.Value)
+	network.Kademlia.StoreKeyValue(msg.Data.Value)
 }
 
 func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
@@ -161,10 +162,16 @@ func SendData(msg Message, contact *Contact) {
 		rpcMsg = STORE
 	}
 	defer Client.Close()
-	_, err = Client.Write(sendMsg)
+
+	Client.Write(sendMsg)
+
+	buf := make([]byte, 1024)
+	n, _, err := Client.ReadFromUDP(buf)
 	if err != nil {
 		fmt.Printf("failed to %s to %s error: %s", rpcMsg, contact.Address, err)
 	}
+
+	response := unmarshall(buf)
 }
 
 func (network *Network) SendPingMessage(contact *Contact) {

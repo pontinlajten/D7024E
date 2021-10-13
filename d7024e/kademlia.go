@@ -60,15 +60,17 @@ func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
 }
 
 
-func (Kademlia *Kademlia) GetContact() Contact {
-	aClosest := Kademlia.LookupContact(&Kademlia.Me)
-	var destContact Contact
-	destContact = aClosest[0]
-	return destContact
+func (kademlia *Kademlia) Store (upload string) {
+	network := &Network{}
+	destContacts := kademlia.LookupContact(&kademlia.Me)
+	for _, destContact := range destContacts {
+		network.SendStoreMessage(upload, &destContact)
+	}
 }
 
+
 //---------------------------------------------------------//
-func (kademlia *Kademlia) Store(value string) {
+func (kademlia *Kademlia) StoreKeyValue(value string) {
 	hash := HashIt(value)
 	for _, keyVal := range kademlia.KeyValues {
 		if hash == keyVal.Key {
@@ -82,8 +84,6 @@ func (kademlia *Kademlia) Store(value string) {
 	newKeyValue.Value = value
 	//newKeyValue.TimeStamp = 24
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
-
-
 }
 
 //---------------------------------------------------------//
