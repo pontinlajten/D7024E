@@ -8,9 +8,8 @@ import (
 
 const (
 	// fanns redan en bucketSize i rt //k int = 20 // num of cont in bucket
-	ALPHA     = 3 //(alpha) degree of parallelism in network calls
-	REBUPLISH = 24
-	K         = 20 // num of cont in bucket
+	ALPHA = 3  //(alpha) degree of parallelism in network calls
+	K     = 20 // num of cont in bucket
 )
 
 type Kademlia struct {
