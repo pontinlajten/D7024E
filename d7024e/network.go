@@ -18,7 +18,7 @@ const (
 )
 
 // Template for init. an network.
-func createNetwork(kademlia *Kademlia) Network {
+func CreateNetwork(kademlia *Kademlia) Network {
 	network := Network{} // Create from Network struct
 	network.Mutex = &sync.Mutex{}
 	network.Kademlia = kademlia

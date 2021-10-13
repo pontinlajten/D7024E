@@ -42,8 +42,7 @@ func main() {
 	me := kad.NewKademlia(localIP)
 	me.InitRt(&bsContact)
 
-	network := kad.Network{}
-	network.Kademlia = &me
+	network := kad.CreateNetwork(&me)
 
 	if localIP != bsIP {
 		newContact := kad.NewContact(kad.NewKademliaID(kad.HashIt(bsIP)), bsIP)
