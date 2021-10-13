@@ -21,8 +21,8 @@ type Kademlia struct {
 }
 
 type KeyValue struct {
-	Key       string
-	Value     string
+	Key   string
+	Value string
 	//TimeStamp int
 }
 
@@ -79,18 +79,6 @@ func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
 	return nil
 }
 
-
-func (kademlia *Kademlia) Store (upload string) {
-	network := &Network{}
-	destContacts := kademlia.LookupContact(&kademlia.Me)
-	for _, destContact := range destContacts {
-		network.SendStoreMessage(upload, &destContact)
-	}
-}
-
-
-//---------------------------------------------------------//
-<<<<<<< HEAD
 func (kademlia *Kademlia) Store(upload string) {
 	network := &Network{}
 	destContacts := kademlia.LookupContact(&kademlia.Me)
@@ -99,8 +87,7 @@ func (kademlia *Kademlia) Store(upload string) {
 	}
 }
 
-=======
->>>>>>> 3c79d2bc29abd1f7aa4b4fb519570365fc81ff7a
+//---------------------------------------------------------//
 func (kademlia *Kademlia) StoreKeyValue(value string) {
 	hash := HashIt(value)
 	for _, keyVal := range kademlia.KeyValues {

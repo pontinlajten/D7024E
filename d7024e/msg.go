@@ -1,14 +1,14 @@
 package d7024e
 
 const ( // RPC Operations
-	PING      = "PING"
-	FIND_NODE = "FIND_NODE"
-	FIND_DATA = "FIND_DATA"
-	STORE     = "STORE"
-	PONG      = "PONG"
+	PING            = "PING"
+	FIND_NODE       = "FIND_NODE"
+	FIND_DATA       = "FIND_DATA"
+	STORE           = "STORE"
+	PONG            = "PONG"
 	FIND_NODE_REPLY = "FIND_NODE_REPLY"
 	FIND_DATA_REPLY = "FIND_DATA_REPLY"
-	STORE_REPLY = "STORE_REPLY"
+	STORE_REPLY     = "STORE_REPLY"
 )
 
 type Message struct {
