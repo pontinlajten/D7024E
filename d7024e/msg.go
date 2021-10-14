@@ -16,12 +16,12 @@ type Message struct {
 	Id      string // Kadmelia ID.
 	RPC     string // RPC operation.
 	Address string // IP Adress.
-	Data    Data
+	Body    Data
 }
 
 type Data struct {
-	Nodes []Contact
-	Key   string
-	Value string
-	Msg   string
+	Nodes    []Contact
+	Key      string
+	Value    string
+	TargetId *KademliaID
 }

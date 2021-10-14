@@ -8,7 +8,7 @@ import (
 
 const (
 	// fanns redan en bucketSize i rt //k int = 20 // num of cont in bucket
-	ALPHA = 3  //(alpha) degree of parallelism in network calls
+	ALPHA = 1  //(alpha) degree of parallelism in network calls
 	K     = 20 // num of cont in bucket
 )
 
@@ -35,38 +35,40 @@ func NewKademlia(ip string) (kademlia Kademlia) {
 //---------------------------------------------------------//
 
 func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Contact) {
-	/*
-		//ch := make(chan []Contact)
-		net := &Network{}
-		net.Kademlia = kademlia
-		channel := make(chan []Contact)
+	//ch := make(chan []Contact)
+	net := &Network{}
+	net.Kademlia = kademlia
+	channel := make(chan []Contact)
 
-		// shortlist of k-closest nodes
-		shortlist := kademlia.NewList(targetID)
+	// shortlist of k-closest nodes
+	shortlist := kademlia.NewList(targetID)
 
-		// if LookupContact on JoinNetwork
-		if shortlist.Len() < ALPHA {
-			go reciverResponse(shortlist.Cons[0].Con, *net, channel)
-		} else {
-			// sending RPCs to the alpha nodes async
-			for i := 0; i < ALPHA; i++ {
-				go reciverResponse(shortlist.Cons[i].Con, *net, channel)
-			}
+	// if LookupContact on JoinNetwork
+	if shortlist.Len() < ALPHA {
+		go reciverResponse(shortlist.Cons[0].Con, *targetID, *net, channel)
+	} else {
+		// sending RPCs to the alpha nodes async
+		for i := 0; i < ALPHA; i++ {
+			go reciverResponse(shortlist.Cons[i].Con, *targetID, *net, channel)
 		}
+	}
 
-		shortlist.UpdateList(*targetID, channel, *net)
+	fmt.Println("3")
 
-		// creating the result list
-		for _, insItem := range shortlist.Cons {
-			resultlist = append(resultlist, insItem.Con)
-		}
-	*/
+	shortlist.UpdateList(*targetID, channel, *net)
+
+	fmt.Println("4")
+
+	// creating the result list
+	for _, insItem := range shortlist.Cons {
+		resultlist = append(resultlist, insItem.Con)
+	}
 	return
 }
 
-func reciverResponse(reciver Contact, net Network, channel chan []Contact) {
-	response, _ := net.SendFindContactMessage(&reciver)
-	channel <- response.Data.Nodes
+func reciverResponse(reciver Contact, targetID KademliaID, net Network, channel chan []Contact) {
+	response, _ := net.SendFindContactMessage(&reciver, &targetID)
+	channel <- response.Body.Nodes
 }
 
 //---------------------------------------------------------//
@@ -111,7 +113,7 @@ func (kademlia *Kademlia) StoreIP(upload string, ip string) string {
 	resp := Message{}
 	fmt.Println("11_")
 	resp, _ = net.SendStoreMessageIP(upload, ip)
-	return resp.Data.Key
+	return resp.Body.Key
 }
 
 //---------------------------------------------------------//

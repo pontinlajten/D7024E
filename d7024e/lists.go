@@ -39,28 +39,46 @@ func (kademlia *Kademlia) NewList(targetID *KademliaID) (list *List) {
 	return
 }
 
+func (list *List) Update(cons []Contact) (Contact, bool) {
+	copyOfList := list.Cons //2
+	responeList := List{}   //1
+
+	for _, con := range cons {
+		item := Item{con, false}
+		responeList.Cons = append(responeList.Cons, item)
+	}
+	SortedList := list.SortIt(copyOfList, responeList.Cons)
+
+	if len(SortedList.Cons) >= K {
+		list.Cons = SortedList.GetContacts(K)
+	} else {
+		list.Cons = SortedList.GetContacts(len(SortedList.Cons))
+	}
+	nextContact, Finished := list.NewContact()
+	return newContact, Finished
+}
+
+func (list *List) NewContact() (Contact, bool) {
+	var newContact Contact
+	Finished := true
+	for i, item := range list.Cons {
+		if item.Seen == false {
+			list.Cons[i].Seen = true
+			Finished = false
+		}
+	}
+	return nextContact, Finished
+}
+
 func (list *List) UpdateList(ID KademliaID, ch chan []Contact, net Network) {
 	for {
-
-		copyOfList := list.Cons //templist2
-		responeList := List{}   //templist
-
-		cons := <-ch
-
-		for _, con := range cons {
-			item := Item{con, false}
-			responeList.Cons = append(responeList.Cons, item)
-		}
-
-		SortedList := list.SortIt(copyOfList, responeList.Cons)
-
-		if len(SortedList.Cons) >= K {
-			list.Cons = SortedList.GetContacts(K)
+		contacts := <-ch
+		nextContact, Done := list.refresh(contacts)
+		if Done {
+			return
 		} else {
-			list.Cons = SortedList.GetContacts(len(SortedList.Cons))
-
+			go reciverResponse(ID, nextContact, net, ch)
 		}
-		//more to do
 	}
 }
 
@@ -71,13 +89,6 @@ func (list *List) SortIt(list1 []Item, list2 []Item) Lookup {
 	sorted.Sort()
 	return sorted
 }
-
-/*
-func RecieverResponse(reciver Contact, nt Network, ch chan []Contact) {
-	response, _ := nt.SendFindContactMessage(&reciver)
-	ch <- response
-}
-*/
 
 // Append an array of Contacts to the ContactCandidates
 func (candidates *Lookup) Append(contacts []Item) {
