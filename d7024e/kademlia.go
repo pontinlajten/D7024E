@@ -35,31 +35,32 @@ func NewKademlia(ip string) (kademlia Kademlia) {
 //---------------------------------------------------------//
 
 func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Contact) {
-	//ch := make(chan []Contact)
-	net := &Network{}
-	net.Kademlia = kademlia
-	channel := make(chan []Contact)
+	/*
+		//ch := make(chan []Contact)
+		net := &Network{}
+		net.Kademlia = kademlia
+		channel := make(chan []Contact)
 
-	// shortlist of k-closest nodes
-	shortlist := kademlia.NewList(targetID)
+		// shortlist of k-closest nodes
+		shortlist := kademlia.NewList(targetID)
 
-	// if LookupContact on JoinNetwork
-	if shortlist.Len() < ALPHA {
-		go reciverResponse(shortlist.Cons[0].Con, *net, channel)
-	} else {
-		// sending RPCs to the alpha nodes async
-		for i := 0; i < ALPHA; i++ {
-			go reciverResponse(shortlist.Cons[i].Con, *net, channel)
+		// if LookupContact on JoinNetwork
+		if shortlist.Len() < ALPHA {
+			go reciverResponse(shortlist.Cons[0].Con, *net, channel)
+		} else {
+			// sending RPCs to the alpha nodes async
+			for i := 0; i < ALPHA; i++ {
+				go reciverResponse(shortlist.Cons[i].Con, *net, channel)
+			}
 		}
-	}
 
-	shortlist.UpdateList(*targetID, channel, *net)
+		shortlist.UpdateList(*targetID, channel, *net)
 
-	// creating the result list
-	for _, insItem := range shortlist.Cons {
-		resultlist = append(resultlist, insItem.Con)
-	}
-
+		// creating the result list
+		for _, insItem := range shortlist.Cons {
+			resultlist = append(resultlist, insItem.Con)
+		}
+	*/
 	return
 }
 
@@ -79,27 +80,38 @@ func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
 	return nil
 }
 
-//---------------------------------------------------------//
-func (kademlia *Kademlia) Store(upload string) (string, string) {
-	hash := HashIt(upload)
+func (kademlia *Kademlia) StoreKeyValue(value string) string {
+	hash := HashIt(value)
+	fmt.Println("2_")
 	for _, keyVal := range kademlia.KeyValues {
 		if hash == keyVal.Key {
-			return "0", "0"
+			//keyVal.TimeStamp = REBUPLISH
+			fmt.Printf("Value is already existing")
+			return keyVal.Key
 		}
 	}
 	var newKeyValue KeyValue
 	newKeyValue.Key = hash
-	newKeyValue.Value = upload
+	newKeyValue.Value = value
+	//newKeyValue.TimeStamp = 24
+	fmt.Println("3_")
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
+	return newKeyValue.Key
+}
+
+func (kademlia *Kademlia) StoreIP(upload string, ip string) string {
 	/*
 		network := &Network{}
-		destContacts := kademlia.LookupContact(&kademlia.Me.)
+		destContacts := kademlia.LookupContact(&kademlia.Me)
 		for _, destContact := range destContacts {
 			network.SendStoreMessage(upload, &destContact)
-		}
-	*/
-
-	return hash, upload
+		} */
+	fmt.Println("1_")
+	net := Network{}
+	resp := Message{}
+	fmt.Println("11_")
+	resp, _ = net.SendStoreMessageIP(upload, ip)
+	return resp.Data.Key
 }
 
 //---------------------------------------------------------//

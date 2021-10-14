@@ -9,11 +9,12 @@ import (
 )
 
 type cli struct {
-	Network *Network
+	Network  *Network
+	TargetIP string
 }
 
-func NewCli(network *Network) *cli {
-	cli := &cli{network}
+func NewCli(network *Network, ip string) *cli {
+	cli := &cli{network, ip}
 	return cli
 }
 
@@ -35,20 +36,8 @@ func (cli *cli) Run() {
 			upload := inputSplit[1]
 			fmt.Println(upload)
 
-			//cli.Network.Kademlia.Store(upload)
-
-			//h_uploaded := cli.Network.Kademlia.HashIt(upload)
-
-			//response := cli.Network.SendFindDataMessage(h_uploaded, &cli.Network.Kademlia.Me)
-			/*
-				if response {
-					fmt.Println("Uploaded succesfully! Hashed: ")
-					fmt.Println(h_uploaded)
-				} else {
-
-				}
-			*/
-
+			resp := cli.Network.Kademlia.StoreIP(upload, cli.TargetIP)
+			fmt.Printf("Successfully uploaded value! Hash: %v", resp)
 		} else {
 			fmt.Println("Invalid arguments for PUT...")
 		}

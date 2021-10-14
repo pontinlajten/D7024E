@@ -45,7 +45,7 @@ func main() {
 
 	go network.Listen(port)
 
-	cli := kad.NewCli(&network)
+	cli := kad.NewCli(&network, bsIP)
 	cli.Run()
 }
 

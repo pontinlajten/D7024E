@@ -52,6 +52,7 @@ func (network *Network) Listen(port string) { // Listen(ip string, port int) ori
 		replyEncoded := marshall(msg)
 		if ifSend {
 			sendResponse(replyEncoded, addr, conn)
+			fmt.Println("4")
 		}
 	}
 }
@@ -83,10 +84,12 @@ func (network *Network) MsgHandler(data []byte) (Message, bool) {
 
 		ifSend = true
 	} else if decoded.RPC == STORE {
-		network.StoreHandler(decoded)
+		fmt.Println("1")
 		reply.Id = network.Kademlia.Me.ID.String()
 		reply.RPC = STORE_REPLY
 		reply.Address = network.Kademlia.Me.Address
+		reply.Data.Key = network.StoreHandler(decoded)
+		fmt.Println("3")
 
 		ifSend = true
 	}
@@ -152,9 +155,10 @@ func (network *Network) FindValueHandler(msg Message) Message {
 	}
 }
 
-func (network *Network) StoreHandler(msg Message) Message {
-	key, value := network.Kademlia.Store(msg.Data.Value)
-	return Message{Id: network.Kademlia.Me.ID.String(), RPC: STORE_REPLY, Address: network.Kademlia.Me.Address, Data: Data{Key: key, Value: value, Msg: "Stored sucessful"}}
+func (network *Network) StoreHandler(msg Message) string {
+	key := network.Kademlia.StoreKeyValue(msg.Data.Value)
+	fmt.Println("2")
+	return key
 }
 
 func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
@@ -208,6 +212,48 @@ func SendData(msg Message, contact *Contact) (Message, error) {
 	return response, nil
 }
 
+func SendDataIP(msg Message, ip string) (Message, error) {
+	var rpcMsg string
+	sendMsg := marshall(msg)
+
+	Client, err := net.Dial("udp", ip)
+	if err != nil {
+		fmt.Printf("failed to dial %s error: %s", ip, err)
+	}
+
+	fmt.Println(msg.RPC + " SEND MESSAGE")
+
+	switch msg.RPC {
+	case PING:
+		fmt.Println("PING SEND MESSAGE")
+		rpcMsg = PING
+
+	case FIND_NODE:
+		rpcMsg = FIND_NODE
+
+	case FIND_DATA:
+		rpcMsg = FIND_DATA
+
+	case STORE:
+		fmt.Println("3")
+		rpcMsg = STORE
+	}
+	defer Client.Close()
+
+	Client.Write(sendMsg)
+
+	buf := make([]byte, 2048)
+
+	n, _ := Client.Read(buf)
+	response := unmarshall(buf[0:n])
+
+	if err != nil {
+		fmt.Printf("failed to %s to %s error: %s", rpcMsg, ip, err)
+	}
+
+	return response, nil
+}
+
 func (network *Network) SendPingMessage(contact *Contact) (Message, error) {
 	msg := Message{Id: network.Kademlia.Me.ID.String(), RPC: PING, Address: network.Kademlia.Me.Address}
 	return SendData(msg, contact)
@@ -226,6 +272,12 @@ func (network *Network) SendFindDataMessage(hash string, contact *Contact) (Mess
 func (network *Network) SendStoreMessage(value string, contact *Contact) (Message, error) {
 	msg := Message{Address: network.Kademlia.Me.Address, RPC: STORE, Data: Data{Value: value}}
 	return SendData(msg, contact)
+}
+
+func (network *Network) SendStoreMessageIP(value string, ip string) (Message, error) {
+	msg := Message{Address: network.Kademlia.Me.Address, RPC: STORE, Data: Data{Value: value}}
+	fmt.Println("2")
+	return SendDataIP(msg, ip)
 }
 
 /////////////////////// HELP FUNCTIONS //////////////////////////
