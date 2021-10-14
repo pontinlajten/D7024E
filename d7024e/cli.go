@@ -37,7 +37,6 @@ func (cli *cli) Run() {
 
 			//cli.Network.Kademlia.Store(upload)
 
-
 			//h_uploaded := cli.Network.Kademlia.HashIt(upload)
 
 			//response := cli.Network.SendFindDataMessage(h_uploaded, &cli.Network.Kademlia.Me)

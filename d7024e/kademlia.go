@@ -59,12 +59,13 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 	for _, insItem := range shortlist.Cons {
 		resultlist = append(resultlist, insItem.Con)
 	}
+
 	return
 }
 
 func reciverResponse(reciver Contact, net Network, channel chan []Contact) {
 	response, _ := net.SendFindContactMessage(&reciver)
-	channel <- response
+	channel <- response.Data.Nodes
 }
 
 //---------------------------------------------------------//
@@ -78,35 +79,33 @@ func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
 	return nil
 }
 
-func (kademlia *Kademlia) Store(upload string) {
-	network := &Network{}
-	destContacts := kademlia.LookupContact(&kademlia.Me)
-	for _, destContact := range destContacts {
-		network.SendStoreMessage(upload, &destContact)
-	}
-}
-
 //---------------------------------------------------------//
-func (kademlia *Kademlia) StoreKeyValue(value string) {
-	hash := HashIt(value)
+func (kademlia *Kademlia) Store(upload string) (string, string) {
+	hash := HashIt(upload)
 	for _, keyVal := range kademlia.KeyValues {
 		if hash == keyVal.Key {
-			//keyVal.TimeStamp = REBUPLISH
-			fmt.Printf("Value is already existing")
-			return
+			return "0", "0"
 		}
 	}
 	var newKeyValue KeyValue
 	newKeyValue.Key = hash
-	newKeyValue.Value = value
-	//newKeyValue.TimeStamp = 24
+	newKeyValue.Value = upload
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
+	/*
+		network := &Network{}
+		destContacts := kademlia.LookupContact(&kademlia.Me.)
+		for _, destContact := range destContacts {
+			network.SendStoreMessage(upload, &destContact)
+		}
+	*/
+
+	return hash, upload
 }
 
 //---------------------------------------------------------//
 func (kademlia *Kademlia) InitRt(known *Contact) {
 	kademlia.Rt.AddContact(*known)
-	kademlia.LookupContact(kademlia.Me.ID)
+	kademlia.LookupContact(known.ID)
 	fmt.Printf("Kademlia node joining network")
 }
 
@@ -117,7 +116,6 @@ func (kademlia *Kademlia) HashIt(str string) string {
 	hash := hex.EncodeToString(hashStr.Sum(nil))
 	//fmt.Println(hash)
 	return hash
-
 }
 
 func HashIt(str string) string {

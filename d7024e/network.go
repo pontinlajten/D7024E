@@ -1,10 +1,10 @@
 package d7024e
 
-import "C"
 import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"strconv"
 	"sync"
 )
 
@@ -48,42 +48,66 @@ func (network *Network) Listen(port string) { // Listen(ip string, port int) ori
 		if err != nil {
 			fmt.Println("Error ReadFromUDP", err)
 		}
-		msg := network.MsgHandler(buffer[:n])
+		msg, ifSend := network.MsgHandler(buffer[:n])
 		replyEncoded := marshall(msg)
-		sendResponse(replyEncoded, addr, conn)
+		if ifSend {
+			sendResponse(replyEncoded, addr, conn)
+		}
 	}
 }
 
-func (network *Network) MsgHandler(data []byte) Message {
+func (network *Network) MsgHandler(data []byte) (Message, bool) {
 	decoded := unmarshall(data)
 	reply := Message{}
 	fmt.Println("RPC: " + decoded.RPC)
 
+	var ifSend bool
+
+	// HANDLING REQUEST->NODE
 	if decoded.RPC == FIND_NODE {
 		reply.Id = network.Kademlia.Me.ID.String()
 		reply.RPC = FIND_NODE_REPLY
 		reply.Address = network.Kademlia.Me.Address
 		reply.Data.Nodes = network.FindNodeHandler(decoded)
 
+		ifSend = true
 	} else if decoded.RPC == PING {
 		reply.Id = network.Kademlia.Me.ID.String()
 		reply.RPC = PONG
 		reply.Address = network.Kademlia.Me.Address
 		network.PingHandler(decoded)
 
-	} else if decoded.RPC == PONG {
-		network.PongHandler(decoded)
-
+		ifSend = true
 	} else if decoded.RPC == FIND_DATA {
 		reply = network.FindValueHandler(decoded)
 
+		ifSend = true
 	} else if decoded.RPC == STORE {
 		network.StoreHandler(decoded)
 		reply.Id = network.Kademlia.Me.ID.String()
 		reply.RPC = STORE_REPLY
 		reply.Address = network.Kademlia.Me.Address
+
+		ifSend = true
 	}
-	return reply
+
+	// HANDLING REQUEST->REPLY->NODE
+	if decoded.RPC == FIND_NODE_REPLY {
+
+		ifSend = false
+	} else if decoded.RPC == PONG {
+		network.PongHandler(decoded)
+
+		ifSend = false
+	} else if decoded.RPC == FIND_DATA_REPLY {
+
+		ifSend = false
+	} else if decoded.RPC == STORE_REPLY {
+
+		ifSend = false
+	}
+
+	return reply, ifSend
 }
 
 func (network *Network) PingHandler(msg Message) {
@@ -128,8 +152,9 @@ func (network *Network) FindValueHandler(msg Message) Message {
 	}
 }
 
-func (network *Network) StoreHandler(msg Message) {
-	network.Kademlia.StoreKeyValue(msg.Data.Value)
+func (network *Network) StoreHandler(msg Message) Message {
+	key, value := network.Kademlia.Store(msg.Data.Value)
+	return Message{Id: network.Kademlia.Me.ID.String(), RPC: STORE_REPLY, Address: network.Kademlia.Me.Address, Data: Data{Key: key, Value: value, Msg: "Stored sucessful"}}
 }
 
 func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
@@ -141,15 +166,21 @@ func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
 
 //////////////////////////////////////////////////////////////////////////////////
 
-func SendData(msg Message, contact *Contact) {
+func SendData(msg Message, contact *Contact) (Message, error) {
 	var rpcMsg string
 	sendMsg := marshall(msg)
-	Client, err := net.Dial("udp", contact.Address)
+
+	address := GetUDPAddrFromContact(contact)
+	Client, err := net.Dial("udp", address.String())
 	if err != nil {
-		fmt.Printf("failed to dial %s error: %s", contact.Address, err)
+		fmt.Printf("failed to dial %s error: %s", address.String(), err)
 	}
+
+	fmt.Println(msg.RPC + " SEND MESSAGE")
+
 	switch msg.RPC {
 	case PING:
+		fmt.Println("PING SEND MESSAGE")
 		rpcMsg = PING
 
 	case FIND_NODE:
@@ -165,33 +196,36 @@ func SendData(msg Message, contact *Contact) {
 
 	Client.Write(sendMsg)
 
-	buf := make([]byte, 1024)
-	n, _, err := Client.ReadFromUDP(buf)
+	buf := make([]byte, 2048)
+
+	n, _ := Client.Read(buf)
+	response := unmarshall(buf[0:n])
+
 	if err != nil {
-		fmt.Printf("failed to %s to %s error: %s", rpcMsg, contact.Address, err)
+		fmt.Printf("failed to %s to %s error: %s", rpcMsg, address.String(), err)
 	}
 
-	response := unmarshall(buf)
+	return response, nil
 }
 
-func (network *Network) SendPingMessage(contact *Contact) {
+func (network *Network) SendPingMessage(contact *Contact) (Message, error) {
 	msg := Message{Id: network.Kademlia.Me.ID.String(), RPC: PING, Address: network.Kademlia.Me.Address}
-	SendData(msg, contact)
+	return SendData(msg, contact)
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact) {
+func (network *Network) SendFindContactMessage(contact *Contact) (Message, error) {
 	msg := Message{Id: network.Kademlia.Me.ID.String(), RPC: FIND_NODE, Address: network.Kademlia.Me.Address}
-	SendData(msg, contact)
+	return SendData(msg, contact)
 }
 
-func (network *Network) SendFindDataMessage(hash string, contact *Contact) {
+func (network *Network) SendFindDataMessage(hash string, contact *Contact) (Message, error) {
 	msg := Message{Id: network.Kademlia.Me.ID.String(), Address: network.Kademlia.Me.Address, RPC: FIND_DATA, Data: Data{Key: hash}}
-	SendData(msg, contact)
+	return SendData(msg, contact)
 }
 
-func (network *Network) SendStoreMessage(value string, contact *Contact) {
+func (network *Network) SendStoreMessage(value string, contact *Contact) (Message, error) {
 	msg := Message{Address: network.Kademlia.Me.Address, RPC: STORE, Data: Data{Value: value}}
-	SendData(msg, contact)
+	return SendData(msg, contact)
 }
 
 /////////////////////// HELP FUNCTIONS //////////////////////////
@@ -205,4 +239,15 @@ func unmarshall(data []byte) Message {
 	var decoded Message
 	json.Unmarshal([]byte(data), &decoded)
 	return decoded
+}
+
+func GetUDPAddrFromContact(contact *Contact) net.UDPAddr {
+	addr, port, _ := net.SplitHostPort(contact.Address)
+	netAddr := net.ParseIP(addr)
+	intPort, _ := strconv.Atoi(port)
+	netAddress := net.UDPAddr{
+		IP:   netAddr,
+		Port: intPort,
+	}
+	return netAddress
 }

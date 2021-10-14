@@ -9,27 +9,20 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"unicode/utf8"
 
 	kad "main/d7024e"
 )
 
 const (
-	port        = "1000"
-	bootstrapIp = "172.20.0.2"
+	port = "1000"
 )
 
 func main() {
 
-	//fmt.Println("hello world")
-	//d7024e.HashIt("192.158.1.38")
-	//kad.NewKademlia("192.158.1.38")
-
-	//fmt.Println(GetOutboundIP())
-	//fmt.Println("123456")
-
 	nodeIp := GetOutboundIP()
 
-	bsIP := bootstrapIp + ":" + port
+	bsIP := GenerateBootstrap(nodeIp.String()) + ":" + port
 
 	localIP := nodeIp.String() + ":" + port
 
@@ -66,4 +59,13 @@ func GetOutboundIP() net.IP {
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 
 	return localAddr.IP
+}
+
+func GenerateBootstrap(str string) string {
+	for len(str) > 0 {
+		_, size := utf8.DecodeLastRuneInString(str)
+		return str[:len(str)-size] + "2"
+	}
+
+	return str
 }
