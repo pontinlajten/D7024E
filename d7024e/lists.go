@@ -6,12 +6,12 @@ import (
 )
 
 //lookup list
-type Lookup struct {
+type Lookup struct { // List
 	Cons  []Item
 	Mutex sync.Mutex
 }
 
-type List struct {
+type List struct { // Temp
 	Cons  []Item
 	Mutex sync.Mutex
 }
@@ -92,7 +92,20 @@ func (list *List) SortIt(list1 []Item, list2 []Item) Lookup {
 
 // Append an array of Contacts to the ContactCandidates
 func (candidates *Lookup) Append(contacts []Item) {
-	candidates.Cons = append(candidates.Cons, contacts...)
+	for _, nextCandidate := range contacts {
+		approved := true
+
+		for _, candidate := range candidates.Cons {
+
+			if candidate.Con.ID.Equals(nextCandidate.Con.ID) {
+				approved = false
+				break
+			}
+		}
+		if approved {
+			candidates.Cons = append(candidates.Cons, nextCandidate)
+		}
+	}
 }
 
 // GetContacts returns the first count number of Contacts

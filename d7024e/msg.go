@@ -6,7 +6,7 @@ const ( // RPC Operations
 	FIND_DATA = "FIND_DATA"
 	STORE     = "STORE"
 
-	PONG            = "PONG"
+	PING_REPLY      = "PING_REPLY"
 	FIND_NODE_REPLY = "FIND_NODE_REPLY"
 	FIND_DATA_REPLY = "FIND_DATA_REPLY"
 	STORE_REPLY     = "STORE_REPLY"
@@ -20,8 +20,9 @@ type Message struct {
 }
 
 type Data struct {
-	Nodes    []Contact
-	Key      string
-	Value    string
-	TargetId *KademliaID
+	Nodes     []Contact
+	Key       string
+	Value     string
+	RequestId string      // From original sender, used in validator.
+	TargetId  *KademliaID // TargetID when checking if exists and so on.
 }

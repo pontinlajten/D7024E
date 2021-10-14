@@ -8,7 +8,7 @@ import (
 
 const (
 	// fanns redan en bucketSize i rt //k int = 20 // num of cont in bucket
-	ALPHA = 1  //(alpha) degree of parallelism in network calls
+	ALPHA = 3  //(alpha) degree of parallelism in network calls
 	K     = 20 // num of cont in bucket
 )
 
@@ -54,16 +54,15 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 		}
 	}
 
-	fmt.Println("3")
-
 	shortlist.UpdateList(*targetID, channel, *net)
-
-	fmt.Println("4")
 
 	// creating the result list
 	for _, insItem := range shortlist.Cons {
 		resultlist = append(resultlist, insItem.Con)
 	}
+
+	fmt.Println(resultlist)
+
 	return
 }
 
@@ -85,7 +84,6 @@ func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
 
 func (kademlia *Kademlia) StoreKeyValue(value string) string {
 	hash := HashIt(value)
-	fmt.Println("2_")
 	for _, keyVal := range kademlia.KeyValues {
 		if hash == keyVal.Key {
 			//keyVal.TimeStamp = REBUPLISH
@@ -97,23 +95,15 @@ func (kademlia *Kademlia) StoreKeyValue(value string) string {
 	newKeyValue.Key = hash
 	newKeyValue.Value = value
 	//newKeyValue.TimeStamp = 24
-	fmt.Println("3_")
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
 	return newKeyValue.Key
 }
 
-func (kademlia *Kademlia) StoreIP(upload string, ip string) string {
-	/*
-		network := &Network{}
-		destContacts := kademlia.LookupContact(&kademlia.Me)
-		for _, destContact := range destContacts {
-			network.SendStoreMessage(upload, &destContact)
-		} */
-	fmt.Println("1_")
-	net := Network{}
+func (kademlia *Kademlia) Store(upload string) string {
+	net := &Network{}
+	net.Kademlia = kademlia
 	resp := Message{}
-	fmt.Println("11_")
-	resp, _ = net.SendStoreMessageIP(upload, ip)
+	// resp, _ = net.SendStoreMessageIP(upload, ip)
 	return resp.Body.Key
 }
 

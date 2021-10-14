@@ -38,8 +38,8 @@ func main() {
 	network := kad.CreateNetwork(&me)
 
 	if localIP != bsIP {
-		newContact := kad.NewContact(kad.NewKademliaID(kad.HashIt(bsIP)), bsIP)
-		me.InitRt(&newContact)
+		// newContact := kad.NewContact(kad.NewKademliaID(kad.HashIt(bsIP)), bsIP)
+		me.InitRt(&bsContact)
 		fmt.Printf("\nRoutingtable: %x\n", me.Rt.FindClosestContacts(me.Me.ID, 4))
 	}
 
