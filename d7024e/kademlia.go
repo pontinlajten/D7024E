@@ -29,7 +29,8 @@ func NewKademlia(ip string) (kademlia Kademlia) {
 	kademlia.Id = NewKademliaID(kademlia.HashIt(ip))
 	kademlia.Me = NewContact(kademlia.Id, ip)
 	kademlia.Rt = NewRoutingTable(kademlia.Me)
-	return
+	kademlia.Me.Address = ip
+	return kademlia
 }
 
 //---------------------------------------------------------//

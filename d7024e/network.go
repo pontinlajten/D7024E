@@ -166,10 +166,11 @@ func SendData(msg Message, contact *Contact) (Message, error) {
 	sendMsg := marshall(msg)
 
 	address := GetUDPAddrFromContact(contact)
-	Client, err := net.Dial("udp", address.String())
+	Client, err := net.DialUDP("udp", nil, &address)
 	if err != nil {
 		fmt.Printf("failed to dial %s error: %s", address.String(), err)
 	}
+	defer Client.Close()
 
 	fmt.Println(msg.RPC + " SEND MESSAGE")
 
@@ -187,18 +188,21 @@ func SendData(msg Message, contact *Contact) (Message, error) {
 	case STORE:
 		rpcMsg = STORE
 	}
-	defer Client.Close()
 
-	Client.Write(sendMsg)
+	Client.Write([]byte(sendMsg))
 
-	buf := make([]byte, 2048)
+	buf := make([]byte, MAX_BUFFER_SIZE)
 
-	n, _ := Client.Read(buf)
+	n, _, _ := Client.ReadFromUDP(buf)
 	response := unmarshall(buf[0:n])
 
 	if err != nil {
 		fmt.Printf("failed to %s to %s error: %s", rpcMsg, address.String(), err)
 	}
+
+	//if Validate(msg, response) {
+
+	//}
 
 	return response, nil
 }
@@ -226,7 +230,6 @@ func SendDataIP(msg Message, ip string) (Message, error) {
 		rpcMsg = FIND_DATA
 
 	case STORE:
-		fmt.Println("3")
 		rpcMsg = STORE
 	}
 	defer Client.Close()
@@ -282,6 +285,8 @@ func unmarshall(data []byte) Message {
 	json.Unmarshal([]byte(data), &decoded)
 	return decoded
 }
+
+func Validate()
 
 func GetUDPAddrFromContact(contact *Contact) net.UDPAddr {
 	addr, port, _ := net.SplitHostPort(contact.Address)

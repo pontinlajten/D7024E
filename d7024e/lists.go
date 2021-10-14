@@ -54,11 +54,11 @@ func (list *List) Update(cons []Contact) (Contact, bool) {
 	} else {
 		list.Cons = SortedList.GetContacts(len(SortedList.Cons))
 	}
-	nextContact, Finished := list.NewContact()
-	return newContact, Finished
+	nextContact, Finished := list.findContact()
+	return nextContact, Finished
 }
 
-func (list *List) NewContact() (Contact, bool) {
+func (list *List) findContact() (Contact, bool) {
 	var newContact Contact
 	Finished := true
 	for i, item := range list.Cons {
@@ -67,17 +67,17 @@ func (list *List) NewContact() (Contact, bool) {
 			Finished = false
 		}
 	}
-	return nextContact, Finished
+	return newContact, Finished
 }
 
 func (list *List) UpdateList(ID KademliaID, ch chan []Contact, net Network) {
 	for {
 		contacts := <-ch
-		nextContact, Done := list.refresh(contacts)
-		if Done {
+		nextContact, Finished := list.Update(contacts)
+		if Finished {
 			return
 		} else {
-			go reciverResponse(ID, nextContact, net, ch)
+			go reciverResponse(nextContact, ID, net, ch)
 		}
 	}
 }
