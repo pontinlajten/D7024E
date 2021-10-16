@@ -8,13 +8,16 @@ import (
 	"strings"
 )
 
+const (
+	b_size = 20
+)
+
 type cli struct {
-	Network  *Network
-	TargetIP string
+	Network *Network
 }
 
-func NewCli(network *Network, ip string) *cli {
-	cli := &cli{network, ip}
+func NewCli(network *Network) *cli {
+	cli := &cli{network}
 	return cli
 }
 
@@ -36,8 +39,8 @@ func (cli *cli) Run() {
 			upload := inputSplit[1]
 			fmt.Println(upload)
 
-			// resp := cli.Network.Kademlia.StoreIP(upload, cli.TargetIP)
-			// fmt.Printf("Successfully uploaded value! Hash: %v", resp)
+			cli.Network.Kademlia.Store(upload)
+
 		} else {
 			fmt.Println("Invalid arguments for PUT...")
 		}
@@ -53,6 +56,6 @@ func (cli *cli) Run() {
 	}
 
 	fmt.Println("")
-	fmt.Println(cli.Network.Kademlia.Rt.FindClosestContacts(cli.Network.Kademlia.Me.ID, 4))
+	fmt.Println(cli.Network.Kademlia.Rt.FindClosestContacts(cli.Network.Kademlia.Me.ID, b_size))
 	cli.Run()
 }

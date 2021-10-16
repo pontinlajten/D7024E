@@ -61,8 +61,6 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 		resultlist = append(resultlist, insItem.Con)
 	}
 
-	fmt.Println(resultlist)
-
 	return
 }
 
@@ -73,9 +71,10 @@ func reciverResponse(reciver Contact, targetID KademliaID, net Network, channel 
 
 //---------------------------------------------------------//
 
-func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
+func (kademlia *Kademlia) LookupData(value string) *KeyValue {
+	ifExist := HashIt(value)
 	for _, keyVal := range kademlia.KeyValues {
-		if hash == keyVal.Key {
+		if ifExist == keyVal.Value {
 			return &keyVal
 		}
 	}
@@ -84,6 +83,7 @@ func (kademlia *Kademlia) LookupData(hash string) *KeyValue {
 
 func (kademlia *Kademlia) StoreKeyValue(value string) string {
 	hash := HashIt(value)
+	hashID := NewKademliaID(hash).String()
 	for _, keyVal := range kademlia.KeyValues {
 		if hash == keyVal.Key {
 			//keyVal.TimeStamp = REBUPLISH
@@ -92,26 +92,41 @@ func (kademlia *Kademlia) StoreKeyValue(value string) string {
 		}
 	}
 	var newKeyValue KeyValue
-	newKeyValue.Key = hash
-	newKeyValue.Value = value
+
+	newKeyValue.Key = hashID
+	newKeyValue.Value = hash
 	//newKeyValue.TimeStamp = 24
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
+
 	return newKeyValue.Key
 }
 
-func (kademlia *Kademlia) Store(upload string) string {
+func (kademlia *Kademlia) Store(upload string) []Contact {
 	net := &Network{}
 	net.Kademlia = kademlia
-	resp := Message{}
+	hash := HashIt(upload)
+	hashID := NewKademliaID(hash)
+
+	k_desitnations := kademlia.LookupContact(hashID)
+
+	for _, target := range k_desitnations { // Checks shortlist for k-nearest.
+		net.SendStoreMessage(upload, &target)
+	}
 	// resp, _ = net.SendStoreMessageIP(upload, ip)
-	return resp.Body.Key
+	return k_desitnations
 }
 
 //---------------------------------------------------------//
-func (kademlia *Kademlia) InitRt(known *Contact) {
+
+func (kademlia *Kademlia) InitNetwork(known *Contact) []Contact {
 	kademlia.Rt.AddContact(*known)
-	kademlia.LookupContact(known.ID)
-	fmt.Printf("Kademlia node joining network")
+	fmt.Println("! PRINTING THE LOOKUP ID FOR INITNETORK !")
+	fmt.Println(kademlia.Me.ID)
+	contacts := kademlia.LookupContact(kademlia.Me.ID)
+
+	fmt.Printf("Joining network via %s", known.String())
+
+	return contacts
 }
 
 //help function that hash data
@@ -119,7 +134,7 @@ func (kademlia *Kademlia) HashIt(str string) string {
 	hashStr := sha1.New()
 	hashStr.Write([]byte(str))
 	hash := hex.EncodeToString(hashStr.Sum(nil))
-	//fmt.Println(hash)
+
 	return hash
 }
 
@@ -127,7 +142,7 @@ func HashIt(str string) string {
 	hashStr := sha1.New()
 	hashStr.Write([]byte(str))
 	hash := hex.EncodeToString(hashStr.Sum(nil))
-	//fmt.Println(hash)
+
 	return hash
 }
 

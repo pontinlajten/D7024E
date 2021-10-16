@@ -13,16 +13,15 @@ const ( // RPC Operations
 )
 
 type Message struct {
-	Id      string // Kadmelia ID.
-	RPC     string // RPC operation.
-	Address string // IP Adress.
-	Body    Data
+	Source *Contact
+	RPC    string // RPC operation.
+	Body   Data
 }
 
 type Data struct {
-	Nodes     []Contact
-	Key       string
-	Value     string
-	RequestId string      // From original sender, used in validator.
-	TargetId  *KademliaID // TargetID when checking if exists and so on.
+	Nodes          []Contact
+	Key            string
+	Value          string
+	OriginalSource *Contact    // From original sender, used in validator.
+	TargetId       *KademliaID // TargetID when checking if exists and so on.
 }
