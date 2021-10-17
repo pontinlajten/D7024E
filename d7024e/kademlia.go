@@ -4,6 +4,8 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"log"
+	"os"
 )
 
 const (
@@ -17,6 +19,7 @@ type Kademlia struct {
 	Me        Contact
 	Rt        *RoutingTable
 	KeyValues []KeyValue
+	Log       *log.Logger
 }
 
 type KeyValue struct {
@@ -30,6 +33,15 @@ func NewKademlia(ip string) (kademlia Kademlia) {
 	kademlia.Me = NewContact(kademlia.Id, ip)
 	kademlia.Rt = NewRoutingTable(kademlia.Me)
 	kademlia.Me.Address = ip
+
+	file, err := os.OpenFile("node_log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	kademlia.Log = log.New(file, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+	kademlia.Log.Printf("Node %s created on address %s \n", kademlia.Me.ID.String(), kademlia.Me.Address)
+
 	return kademlia
 }
 
@@ -46,11 +58,11 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 
 	// if LookupContact on JoinNetwork
 	if shortlist.Len() < ALPHA {
-		go reciverResponse(shortlist.Cons[0].Con, *targetID, *net, channel)
+		go AsyncFindContact(shortlist.Cons[0].Con, *targetID, *net, channel)
 	} else {
 		// sending RPCs to the alpha nodes async
 		for i := 0; i < ALPHA; i++ {
-			go reciverResponse(shortlist.Cons[i].Con, *targetID, *net, channel)
+			go AsyncFindContact(shortlist.Cons[i].Con, *targetID, *net, channel)
 		}
 	}
 
@@ -61,11 +73,12 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 		resultlist = append(resultlist, insItem.Con)
 	}
 
+	kademlia.Log.Printf("Looking up contact %s and found closest %s.", targetID.String(), resultlist)
 	return
 }
 
-func reciverResponse(reciver Contact, targetID KademliaID, net Network, channel chan []Contact) {
-	response, _ := net.SendFindContactMessage(&reciver, &targetID)
+func AsyncFindContact(reciver Contact, targetID KademliaID, net Network, channel chan []Contact) {
+	response := net.SendFindContactMessage(&reciver, &targetID)
 	channel <- response.Body.Nodes
 }
 
@@ -118,15 +131,12 @@ func (kademlia *Kademlia) Store(upload string) []Contact {
 
 //---------------------------------------------------------//
 
-func (kademlia *Kademlia) InitNetwork(known *Contact) []Contact {
-	kademlia.Rt.AddContact(*known)
-	fmt.Println("! PRINTING THE LOOKUP ID FOR INITNETORK !")
-	fmt.Println(kademlia.Me.ID)
-	contacts := kademlia.LookupContact(kademlia.Me.ID)
+func (kademlia *Kademlia) InitNetwork(known *Contact) (contacts []Contact) {
+	kademlia.Rt.AddContact(*known) // Add bootstrap conctact
+	contacts = kademlia.LookupContact(kademlia.Me.ID)
 
-	fmt.Printf("Joining network via %s", known.String())
-
-	return contacts
+	//fmt.Printf("Joining network via %s", known.String())
+	return
 }
 
 //help function that hash data

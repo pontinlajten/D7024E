@@ -21,12 +21,6 @@ type Item struct {
 	Seen bool
 }
 
-// creates New list with x closest
-func (kademlia *Kademlia) FindXClosest(target *Contact, x int) []Contact {
-	xClosest := kademlia.Rt.FindClosestContacts(target.ID, x)
-	return xClosest
-}
-
 func (kademlia *Kademlia) NewList(targetID *KademliaID) (list *List) {
 	list = &List{}
 
@@ -62,7 +56,7 @@ func (list *List) findContact() (Contact, bool) {
 	var newContact Contact
 	Finished := true
 	for i, item := range list.Cons {
-		if item.Seen == false {
+		if !item.Seen {
 			list.Cons[i].Seen = true
 			Finished = false
 		}
@@ -77,7 +71,7 @@ func (list *List) UpdateList(ID KademliaID, ch chan []Contact, net Network) {
 		if Finished {
 			return
 		} else {
-			go reciverResponse(nextContact, ID, net, ch)
+			go AsyncFindContact(nextContact, ID, net, ch)
 		}
 	}
 }
