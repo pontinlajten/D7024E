@@ -31,7 +31,10 @@ type KeyValue struct {
 
 func NewKademlia(ip string) (kademlia Kademlia) {
 	kademlia.Id = NewKademliaID(kademlia.HashIt(ip))
+	fmt.Println("MY IDIDIDIDIDID")
+	fmt.Println(kademlia.Id)
 	kademlia.Me = NewContact(kademlia.Id, ip)
+	fmt.Println(kademlia.Me)
 	kademlia.Rt = NewRoutingTable(kademlia.Me)
 	kademlia.Me.Address = ip
 
@@ -57,6 +60,8 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 	// shortlist of k-closest nodes
 	shortlist := kademlia.NewList(targetID)
 
+	fmt.Println("The length is asffasdfdsa")
+	fmt.Println(shortlist.Len())
 	// if LookupContact on JoinNetwork
 	if shortlist.Len() < alpha {
 		go AsyncFindContact(shortlist.Cons[0].Con, *targetID, *net, channel)
@@ -74,12 +79,17 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 		resultlist = append(resultlist, insItem.Con)
 	}
 
-	kademlia.Log.Printf("Looking up contact %s and found closest %s.", targetID.String(), resultlist)
+	//kademlia.Log.Printf("Looking up contact %s and found closest %s.", targetID.String(), resultlist)
 	return
 }
 
 func AsyncFindContact(reciver Contact, targetID KademliaID, net Network, channel chan []Contact) {
-	response, _ := net.SendFindContactMessage(&reciver, &targetID)
+	response, err := net.SendFindContactMessage(&reciver, &targetID)
+	fmt.Println("asyncfunctionnnn")
+	fmt.Println(response)
+	if err != nil {
+		fmt.Println(err)
+	}
 	channel <- response
 }
 
@@ -132,12 +142,12 @@ func (kademlia *Kademlia) Store(upload string) []Contact {
 
 //---------------------------------------------------------//
 
-func (kademlia *Kademlia) InitNetwork(known *Contact) (contacts []Contact) {
+func (kademlia *Kademlia) InitNetwork(known *Contact) []Contact {
 	kademlia.Rt.AddContact(*known) // Add bootstrap conctact
-	contacts = kademlia.LookupContact(kademlia.Me.ID)
+	contacts := kademlia.LookupContact(kademlia.Me.ID)
 
 	//fmt.Printf("Joining network via %s", known.String())
-	return
+	return contacts
 }
 
 //help function that hash data

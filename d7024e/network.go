@@ -47,10 +47,16 @@ func (network *Network) Listen() { // Listen(ip string, port int) original.
 
 		decoded := unmarshall(buffer[:n])
 
+		fmt.Println("BOBO ÄR BaST ::::::::: " + decoded.Body.TargetId.String())
+
 		network.Kademlia.Rt.AddContact(*decoded.Source)
 
 		msg := network.MsgHandler(decoded)
+		fmt.Println("UNMarshal to marshal:  ", msg.Body.Nodes)
 		replyEncoded := marshall(msg)
+
+		test := unmarshall(replyEncoded)
+		fmt.Println("Marshal to unmarshal:  ", test.Body.Nodes)
 
 		sendResponse(replyEncoded, addr, conn)
 
@@ -59,7 +65,7 @@ func (network *Network) Listen() { // Listen(ip string, port int) original.
 
 func (network *Network) MsgHandler(decoded Message) Message {
 	reply := Message{}
-	body := Data{}
+	body := MsgBody{}
 
 	// HANDLING REQUEST->NODE
 	if decoded.RPC == FIND_NODE {
@@ -67,6 +73,7 @@ func (network *Network) MsgHandler(decoded Message) Message {
 		reply.RPC = FIND_NODE_REPLY
 
 		body.Nodes = network.FindNodeHandler(decoded)
+		fmt.Println(body.Nodes)
 
 		body.OriginalSource = decoded.Source
 		reply.Body = body
@@ -96,19 +103,20 @@ func (network *Network) MsgHandler(decoded Message) Message {
 
 func (network *Network) FindNodeHandler(msg Message) []Contact {
 	contacts := network.Kademlia.Rt.FindClosestContacts(msg.Body.TargetId, bucketSize)
-
+	fmt.Println("THIS IS THE ROUTING TABLE RETURNING TO THE SENDER")
+	fmt.Println(contacts)
 	return contacts
 }
 
 func (network *Network) FindValueHandler(msg Message) Message {
 	keyVal := network.Kademlia.LookupData(msg.Body.Key)
 	if keyVal != nil {
-		return Message{Source: &network.Kademlia.Me, RPC: FIND_DATA_REPLY, Body: Data{Key: keyVal.Key, Value: keyVal.Value}}
+		return Message{Source: &network.Kademlia.Me, RPC: FIND_DATA_REPLY, Body: MsgBody{Key: keyVal.Key, Value: keyVal.Value}}
 	} else {
 		id := NewKademliaID(msg.Body.Key)
 		newContacts := network.Kademlia.Rt.FindClosestContacts(id, bucketSize)
 
-		return Message{Source: &network.Kademlia.Me, RPC: FIND_DATA_REPLY, Body: Data{Nodes: newContacts}}
+		return Message{Source: &network.Kademlia.Me, RPC: FIND_DATA_REPLY, Body: MsgBody{Nodes: newContacts}}
 	}
 }
 
@@ -156,11 +164,15 @@ func (network *Network) SendData(msg Message, contact *Contact) (Message, error)
 
 	buf := make([]byte, MAX_BUFFER_SIZE)
 
-	n, _, err2 := Client.ReadFromUDP([]byte(buf))
+	n, _, err2 := Client.ReadFrom([]byte(buf))
 	response := unmarshall(buf[:n])
 	if response.RPC == FIND_NODE_REPLY {
 		fmt.Println(network.Kademlia.Me.Address + "checking if reply correct")
 		fmt.Println(response.Body.Nodes)
+
+		//for item := Body.Nodes{
+
+		//}
 	}
 
 	fmt.Println(err2)
@@ -186,7 +198,7 @@ func (network *Network) SendPingMessage(contact *Contact) error {
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact, targetId *KademliaID) ([]Contact, error) {
-	msg := Message{Source: &network.Kademlia.Me, RPC: FIND_NODE, Body: Data{TargetId: targetId}}
+	msg := Message{Source: &network.Kademlia.Me, RPC: FIND_NODE, Body: MsgBody{TargetId: targetId}}
 	res, err := network.SendData(msg, contact)
 	if err != nil {
 		errors.Wrap(err, "Something went wrong")
@@ -196,12 +208,12 @@ func (network *Network) SendFindContactMessage(contact *Contact, targetId *Kadem
 }
 
 func (network *Network) SendFindDataMessage(hash string, contact *Contact) (Message, error) {
-	msg := Message{Source: &network.Kademlia.Me, RPC: FIND_DATA, Body: Data{Key: hash}}
+	msg := Message{Source: &network.Kademlia.Me, RPC: FIND_DATA, Body: MsgBody{Key: hash}}
 	return network.SendData(msg, contact)
 }
 
 func (network *Network) SendStoreMessage(value string, contact *Contact) (Message, error) {
-	msg := Message{Source: &network.Kademlia.Me, RPC: STORE, Body: Data{Value: value}}
+	msg := Message{Source: &network.Kademlia.Me, RPC: STORE, Body: MsgBody{Value: value}}
 	res, err := network.SendData(msg, contact)
 	if err != nil {
 		errors.Wrap(err, "Something went wrong")

@@ -15,10 +15,10 @@ const ( // RPC Operations
 type Message struct {
 	Source *Contact
 	RPC    string // RPC operation.
-	Body   Data
+	Body   MsgBody
 }
 
-type Data struct {
+type MsgBody struct {
 	Nodes          []Contact
 	Key            string
 	Value          string
