@@ -8,10 +8,11 @@ import (
 	"os"
 )
 
+const alpha int = 3
+
 const (
 	// fanns redan en bucketSize i rt //k int = 20 // num of cont in bucket
-	ALPHA = 3  //(alpha) degree of parallelism in network calls
-	K     = 20 // num of cont in bucket
+	K = 20 // num of cont in bucket
 )
 
 type Kademlia struct {
@@ -57,11 +58,11 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 	shortlist := kademlia.NewList(targetID)
 
 	// if LookupContact on JoinNetwork
-	if shortlist.Len() < ALPHA {
+	if shortlist.Len() < alpha {
 		go AsyncFindContact(shortlist.Cons[0].Con, *targetID, *net, channel)
 	} else {
 		// sending RPCs to the alpha nodes async
-		for i := 0; i < ALPHA; i++ {
+		for i := 0; i < alpha; i++ {
 			go AsyncFindContact(shortlist.Cons[i].Con, *targetID, *net, channel)
 		}
 	}
@@ -78,8 +79,8 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 }
 
 func AsyncFindContact(reciver Contact, targetID KademliaID, net Network, channel chan []Contact) {
-	response := net.SendFindContactMessage(&reciver, &targetID)
-	channel <- response.Body.Nodes
+	response, _ := net.SendFindContactMessage(&reciver, &targetID)
+	channel <- response
 }
 
 //---------------------------------------------------------//
