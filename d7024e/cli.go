@@ -40,14 +40,24 @@ func (cli *cli) Run() {
 				upload := inputSplit[1]
 				fmt.Println(upload)
 
-				cli.Network.Kademlia.Store(upload)
+				contacts := cli.Network.Kademlia.Store(upload)
+				fmt.Println("---------------------")
+				fmt.Println(contacts)
+				fmt.Println("---------------------")
 
 			} else {
 				fmt.Println("Invalid arguments for PUT...")
 			}
 		case "GET":
-			if len(inputSplit) > 2 {
+			if len(inputSplit) >= 2 {
+				find := inputSplit[1]
+				fmt.Println(find)
+				b, contacts := cli.Network.Kademlia.LookupData(find)
 
+				fmt.Println("---------------------")
+				fmt.Println(b)
+				fmt.Println("----------------------")
+				fmt.Println(contacts)
 			} else {
 				fmt.Println("Invalid arguments for GET...")
 			}

@@ -93,8 +93,11 @@ func (kademlia *Kademlia) LookupData(hash string) ([]byte, Contact) {
 	net := &Network{}
 	net.Kademlia = kademlia
 	var wg sync.WaitGroup // gorutine waiting pool
+	fmt.Println("   HASH IN LOOKUPDATA   ")
+	fmt.Println(hash)
 
-	hashID := NewKademliaID(hash) // create kademlia ID from the hashed data
+	hashID := NewKademliaID(HashIt(hash)) // create kademlia ID from the hashed data
+	fmt.Println("Lookin for hash in nodes : " + hashID.String())
 	/*
 		shortlist (below) is a LookupList which both contains the contacts
 		that need to be traversed in order to find the data as well
@@ -123,10 +126,10 @@ func (kademlia *Kademlia) LookupData(hash string) ([]byte, Contact) {
 }
 
 func asyncLookupData(hash string, receiver Contact, net Network, ch chan []Contact, target chan []byte, dataContactCh chan Contact) {
-	response, _ := net.SendFindDataMessage(&receiver, hash)
+	response, _ := net.SendFindDataMessage(hash, &receiver)
 	ch <- response.Body.Nodes
-	target <- targetData
-	dataContactCh <- dataContact
+	target <- []byte(response.Body.Value)
+	dataContactCh <- *response.Source
 }
 
 func (kademlia *Kademlia) StoreKeyValue(value string) string {
@@ -160,6 +163,8 @@ func (kademlia *Kademlia) Store(upload string) []Contact {
 	fmt.Println(k_desitnations)
 
 	var hashList []string
+
+	fmt.Println("Storing hashid: " + hashID.String())
 
 	for _, target := range k_desitnations { // Checks shortlist for k-nearest.
 		response, _ := net.SendStoreMessage(upload, &target)

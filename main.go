@@ -16,7 +16,7 @@ import (
 
 const (
 	port        = "1000"
-	bs_template = "xxx.x.xx.x"
+	bs_template = "xxx.xxx.xx.x"
 )
 
 func main() {
