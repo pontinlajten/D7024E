@@ -96,7 +96,7 @@ func (kademlia *Kademlia) LookupData(hash string) ([]byte, Contact) {
 	fmt.Println("   HASH IN LOOKUPDATA   ")
 	fmt.Println(hash)
 
-	hashID := NewKademliaID(HashIt(hash)) // create kademlia ID from the hashed data
+	hashID := NewKademliaID(hash) // create kademlia ID from the hashed data
 	fmt.Println("Lookin for hash in nodes : " + hashID.String())
 	/*
 		shortlist (below) is a LookupList which both contains the contacts
@@ -145,9 +145,12 @@ func (kademlia *Kademlia) StoreKeyValue(value string) string {
 	var newKeyValue KeyValue
 
 	newKeyValue.Key = hashID
-	newKeyValue.Value = hash
+	newKeyValue.Value = value
 	//newKeyValue.TimeStamp = 24
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
+
+	fmt.Println("ALL STORED VALUES IN NODE: ")
+	fmt.Println(kademlia.KeyValues)
 
 	return newKeyValue.Key
 }
