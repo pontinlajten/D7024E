@@ -137,7 +137,6 @@ func (kademlia *Kademlia) StoreKeyValue(value string) string {
 	hashID := NewKademliaID(hash).String()
 	for _, keyVal := range kademlia.KeyValues {
 		if hash == keyVal.Key {
-			//keyVal.TimeStamp = REBUPLISH
 			fmt.Printf("Value is already existing")
 			return keyVal.Key
 		}
@@ -146,33 +145,28 @@ func (kademlia *Kademlia) StoreKeyValue(value string) string {
 
 	newKeyValue.Key = hashID
 	newKeyValue.Value = hash
-	//newKeyValue.TimeStamp = 24
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
 
 	return newKeyValue.Key
 }
 
-func (kademlia *Kademlia) Store(upload string) []Contact {
+func (kademlia *Kademlia) Store(upload string) string {
 	net := &Network{}
 	net.Kademlia = kademlia
 	hash := HashIt(upload)
 	hashID := NewKademliaID(hash)
 
 	k_desitnations := kademlia.LookupContact(hashID)
-	fmt.Println("STORING AT: ")
-	fmt.Println(k_desitnations)
-
-	var hashList []string
-
-	fmt.Println("Storing hashid: " + hashID.String())
+	var hashReturn string
 
 	for _, target := range k_desitnations { // Checks shortlist for k-nearest.
 		response, _ := net.SendStoreMessage(upload, &target)
-		hash := response.Body.Key
-		hashList = append(hashList, hash)
+		if response.Body.Key != "" {
+			hashReturn = response.Body.Key
+		}
 	}
-	// resp, _ = net.SendStoreMessageIP(upload, ip)
-	return k_desitnations
+
+	return hashReturn
 }
 
 //---------------------------------------------------------//

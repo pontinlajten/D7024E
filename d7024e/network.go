@@ -64,7 +64,6 @@ func (network *Network) MsgHandler(decoded Message) Message {
 	if decoded.RPC == FIND_NODE {
 		reply.Source = &network.Kademlia.Me
 		reply.RPC = FIND_NODE_REPLY
-
 		body.Nodes = network.FindNodeHandler(decoded)
 
 		body.OriginalSource = decoded.Source

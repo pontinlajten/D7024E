@@ -36,28 +36,23 @@ func (cli *cli) Run() {
 			fmt.Println("EXIT ENTERED.")
 			return
 		case "PUT":
-			if len(inputSplit) == 2 {
+			if inputSplit[0] == "PUT" {
 				upload := inputSplit[1]
-				fmt.Println(upload)
 
-				contacts := cli.Network.Kademlia.Store(upload)
-				fmt.Println("---------------------")
-				fmt.Println(contacts)
-				fmt.Println("---------------------")
+				hash := cli.Network.Kademlia.Store(upload)
+				fmt.Printf("Successfully uploaded value! Hash: %v", hash)
+
 
 			} else {
 				fmt.Println("Invalid arguments for PUT...")
 			}
 		case "GET":
-			if len(inputSplit) >= 2 {
-				find := inputSplit[1]
-				fmt.Println(find)
-				b, contacts := cli.Network.Kademlia.LookupData(find)
+			if inputSplit[0] == "GET" {
+				hash := inputSplit[1]
+				fmt.Println(hash)
 
-				fmt.Println("---------------------")
-				fmt.Println(b)
-				fmt.Println("----------------------")
-				fmt.Println(contacts)
+				value, nodeId := cli.Network.Kademlia.LookupData(hash)
+				fmt.Printf("Succefully return value: %v from node: %v", value, nodeId)
 			} else {
 				fmt.Println("Invalid arguments for GET...")
 			}
