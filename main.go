@@ -7,9 +7,6 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net"
-	"unicode/utf8"
 
 	project "main/d7024e"
 )
@@ -20,35 +17,40 @@ const (
 )
 
 func main() {
+	ip := "162.20.0.0:1000"
+	hash := project.HashIt(ip)
+	fmt.Println(hash)
+	/*
+		nodeIp := GetOutboundIP()
 
-	nodeIp := GetOutboundIP()
+		bsIP := GenerateBootstrap(nodeIp.String(), bs_template) + ":" + port
 
-	bsIP := GenerateBootstrap(nodeIp.String(), bs_template) + ":" + port
+		localIP := nodeIp.String() + ":" + port
 
-	localIP := nodeIp.String() + ":" + port
+		fmt.Println("BootStrap ip:", bsIP)
+		fmt.Println("My ip:", localIP)
 
-	fmt.Println("BootStrap ip:", bsIP)
-	fmt.Println("My ip:", localIP)
+		bsID := project.NewKademliaID(project.HashIt(bsIP))
+		bsContact := project.NewContact(bsID, bsIP)
 
-	bsID := project.NewKademliaID(project.HashIt(bsIP))
-	bsContact := project.NewContact(bsID, bsIP)
+		me := project.NewKademlia(localIP)
 
-	me := project.NewKademlia(localIP)
+		network := project.CreateNetwork(&me)
 
-	network := project.CreateNetwork(&me)
+		if localIP != bsIP {
+			// newContact := kad.NewContact(kad.NewKademliaID(kad.HashIt(bsIP)), bsIP)
+			me.InitNetwork(&bsContact)
+			//fmt.Printf("\nRoutingtable: %x\n", me.Rt.FindClosestContacts(me.Me.ID, 4))
+		}
 
-	if localIP != bsIP {
-		// newContact := kad.NewContact(kad.NewKademliaID(kad.HashIt(bsIP)), bsIP)
-		me.InitNetwork(&bsContact)
-		//fmt.Printf("\nRoutingtable: %x\n", me.Rt.FindClosestContacts(me.Me.ID, 4))
-	}
+		go network.Listen()
 
-	go network.Listen()
-
-	cli := project.NewCli(&network)
-	cli.Run()
+		cli := project.NewCli(&network)
+		cli.Run()
+	*/
 }
 
+/*
 func GetOutboundIP() net.IP {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
@@ -71,3 +73,4 @@ func GenerateBootstrap(str string, bp string) string {
 
 	return str
 }
+*/
