@@ -100,14 +100,14 @@ func (network *Network) FindNodeHandler(msg Message) []Contact {
 func (network *Network) FindValueHandler(msg Message) Message {
 	keyVal := network.Kademlia.LookupDataHash(msg.Body.Key)
 
-	if keyVal != nil {
-		return Message{Source: &network.Kademlia.Me, RPC: FIND_DATA_REPLY, Body: MsgBody{Key: keyVal.Key, Value: keyVal.Value}}
-	} else {
-		id := NewKademliaID(msg.Body.Key)
-		newContacts := network.Kademlia.Rt.FindClosestContacts(id, bucketSize)
+	id := NewKademliaID(msg.Body.Key)
+	newContacts := network.Kademlia.Rt.FindClosestContacts(id, bucketSize)
 
-		return Message{Source: &network.Kademlia.Me, RPC: FIND_DATA_REPLY, Body: MsgBody{Nodes: newContacts}}
+	if keyVal != nil {
+		return Message{Source: &network.Kademlia.Me, RPC: FIND_DATA_REPLY, Body: MsgBody{Nodes: newContacts, Key: keyVal.Key, Value: keyVal.Value}}
 	}
+
+	return Message{Source: &network.Kademlia.Me, RPC: FIND_DATA_REPLY, Body: MsgBody{Nodes: newContacts}}
 }
 
 func (network *Network) StoreHandler(msg Message) string {

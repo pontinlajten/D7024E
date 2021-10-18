@@ -38,10 +38,11 @@ func (cli *cli) Run() {
 		case "PUT":
 			if len(inputSplit) == 2 {
 				upload := inputSplit[1]
-				fmt.Println(upload)
 
 				contacts := cli.Network.Kademlia.Store(upload)
 				fmt.Println("---------------------")
+				fmt.Println()
+				fmt.Print("Data stored at: ")
 				fmt.Println(contacts)
 				fmt.Println("---------------------")
 
@@ -49,24 +50,22 @@ func (cli *cli) Run() {
 				fmt.Println("Invalid arguments for PUT...")
 			}
 		case "GET":
-			if len(inputSplit) >= 2 {
+			if len(inputSplit) == 2 {
 				find := inputSplit[1]
-				fmt.Println(find)
-				b, contacts := cli.Network.Kademlia.LookupData(find)
+				b, _ := cli.Network.Kademlia.LookupData(find)
 
 				fmt.Println("---------------------")
-				fmt.Println(b)
+				fmt.Println("Value returned: " + string(b))
 				fmt.Println("----------------------")
-				fmt.Println(contacts)
 			} else {
 				fmt.Println("Invalid arguments for GET...")
 			}
 		default:
 			fmt.Println("INVALID COMMAND")
 			fmt.Println("EXIT, PUT <arg1>, GET <arg1> <arg2> ...")
-		}
 
-		fmt.Println("")
-		fmt.Println(cli.Network.Kademlia.Rt.FindClosestContacts(cli.Network.Kademlia.Me.ID, b_size))
+			fmt.Println("")
+			fmt.Println(cli.Network.Kademlia.Rt.FindClosestContacts(cli.Network.Kademlia.Me.ID, b_size))
+		}
 	}
 }

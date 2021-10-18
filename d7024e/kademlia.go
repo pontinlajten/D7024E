@@ -93,11 +93,8 @@ func (kademlia *Kademlia) LookupData(hash string) ([]byte, Contact) {
 	net := &Network{}
 	net.Kademlia = kademlia
 	var wg sync.WaitGroup // gorutine waiting pool
-	fmt.Println("   HASH IN LOOKUPDATA   ")
-	fmt.Println(hash)
-
-	hashID := NewKademliaID(hash) // create kademlia ID from the hashed data
-	fmt.Println("Lookin for hash in nodes : " + hashID.String())
+	s_hash := string(hash)
+	hashID := NewKademliaID(s_hash) // create kademlia ID from the hashed data
 	/*
 		shortlist (below) is a LookupList which both contains the contacts
 		that need to be traversed in order to find the data as well
