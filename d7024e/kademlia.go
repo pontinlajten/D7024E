@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
-	"os"
+	"sync"
 )
 
 const alpha int = 3
@@ -34,14 +34,6 @@ func NewKademlia(ip string) (kademlia Kademlia) {
 	kademlia.Me = NewContact(kademlia.Id, ip)
 	kademlia.Rt = NewRoutingTable(kademlia.Me)
 	kademlia.Me.Address = ip
-
-	file, err := os.OpenFile("node_log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	kademlia.Log = log.New(file, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-	kademlia.Log.Printf("Node %s created on address %s \n", kademlia.Me.ID.String(), kademlia.Me.Address)
 
 	return kademlia
 }
@@ -88,14 +80,53 @@ func AsyncFindContact(reciver Contact, targetID KademliaID, net Network, channel
 
 //---------------------------------------------------------//
 
-func (kademlia *Kademlia) LookupData(value string) *KeyValue {
-	ifExist := HashIt(value)
+func (kademlia *Kademlia) LookupDataHash(hash string) *KeyValue {
 	for _, keyVal := range kademlia.KeyValues {
-		if ifExist == keyVal.Value {
+		if hash == keyVal.Key {
 			return &keyVal
 		}
 	}
 	return nil
+}
+
+func (kademlia *Kademlia) LookupData(hash string) ([]byte, Contact) {
+	net := &Network{}
+	net.Kademlia = kademlia
+	var wg sync.WaitGroup // gorutine waiting pool
+
+	hashID := NewKademliaID(hash) // create kademlia ID from the hashed data
+	/*
+		shortlist (below) is a LookupList which both contains the contacts
+		that need to be traversed in order to find the data as well
+		as data itself.
+	*/
+
+	shortlist := kademlia.NewList(hashID)
+
+	ch := make(chan []Contact)          // channel -> returns contacts
+	targetData := make(chan []byte)     // channel -> when the data is found it is communicated through this channel
+	dataContactCh := make(chan Contact) // channel that only takes the contact that returned the data
+
+	if shortlist.Len() < alpha {
+		go asyncLookupData(hash, shortlist.Cons[0].Con, *net, ch, targetData, dataContactCh)
+	} else {
+		// sending RPCs to the alpha nodes async
+		for i := 0; i < alpha; i++ {
+			go asyncLookupData(hash, shortlist.Cons[i].Con, *net, ch, targetData, dataContactCh)
+		}
+	}
+
+	data, con := shortlist.updateLookupData(hash, ch, targetData, dataContactCh, *net, wg)
+
+	// creating the resultdata, con :=shortlist.updateLook list
+	return data, con
+}
+
+func asyncLookupData(hash string, receiver Contact, net Network, ch chan []Contact, target chan []byte, dataContactCh chan Contact) {
+	response, _ := net.SendFindDataMessage(&receiver, hash)
+	ch <- response.Body.Nodes
+	target <- targetData
+	dataContactCh <- dataContact
 }
 
 func (kademlia *Kademlia) StoreKeyValue(value string) string {
@@ -125,9 +156,15 @@ func (kademlia *Kademlia) Store(upload string) []Contact {
 	hashID := NewKademliaID(hash)
 
 	k_desitnations := kademlia.LookupContact(hashID)
+	fmt.Println("STORING AT: ")
+	fmt.Println(k_desitnations)
+
+	var hashList []string
 
 	for _, target := range k_desitnations { // Checks shortlist for k-nearest.
-		net.SendStoreMessage(upload, &target)
+		response, _ := net.SendStoreMessage(upload, &target)
+		hash := response.Body.Key
+		hashList = append(hashList, hash)
 	}
 	// resp, _ = net.SendStoreMessageIP(upload, ip)
 	return k_desitnations

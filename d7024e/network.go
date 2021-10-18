@@ -99,9 +99,9 @@ func (network *Network) FindNodeHandler(msg Message) []Contact {
 }
 
 func (network *Network) FindValueHandler(msg Message) Message {
-	keyVal := network.Kademlia.LookupData(msg.Body.Key)
+	keyVal := network.Kademlia.LookupDataHash(msg.Body.Key)
 	if keyVal != nil {
-		return Message{Source: &network.Kademlia.Me, RPC: FIND_DATA_REPLY, Body: MsgBody{Key: keyVal.Key, Value: keyVal.Value}}
+		return Message{Source: &network.Kademlia.Me, RPC: FIND_DATA_REPLY, Body: MsgBody{Nodes: ,Key: keyVal.Key, Value: keyVal.Value}}
 	} else {
 		id := NewKademliaID(msg.Body.Key)
 		newContacts := network.Kademlia.Rt.FindClosestContacts(id, bucketSize)
@@ -160,6 +160,14 @@ func (network *Network) SendData(msg Message, contact *Contact) (Message, error)
 	if err != nil {
 		fmt.Printf("failed to %s to %s error: %s", rpcMsg, address.String(), err)
 	}
+
+	/*
+		if network.Validate(msg, response) && response.RPC == FIND_NODE_REPLY {
+			for item := range response.Body.Nodes {
+				network.Kademlia.Rt.AddContact(response.Body.Nodes[item])
+			}
+		}
+	*/
 
 	if network.Validate(msg, response) {
 		network.Kademlia.Rt.AddContact(*response.Source) // Updates routing table if recieves succesful respond from target node.

@@ -1,7 +1,6 @@
 package d7024e
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 )
@@ -79,6 +78,26 @@ func (list *List) UpdateList(ID KademliaID, ch chan []Contact, net Network) {
 	}
 }
 
+func (lookuplist *List) updateLookupData(hash string, ch chan []Contact, target chan []byte, dataContactCh chan Contact, net Network, wg sync.WaitGroup) ([]byte, Contact) {
+	for {
+		contacts := <-ch
+		targetData := <-target
+		dataContact := <-dataContactCh
+
+		// data not nil = correct data is found
+		if targetData != nil {
+			return targetData, dataContact
+		}
+
+		nextContact, Done := lookuplist.Update(contacts)
+		if Done {
+			return nil, Contact{}
+		} else {
+			go asyncLookupData(hash, nextContact, net, ch, target, dataContactCh)
+		}
+	}
+}
+
 func (list *List) SortIt(list1 []Item, list2 []Item) Lookup {
 	sorted := Lookup{}
 	sorted.Append(list1)
@@ -112,7 +131,6 @@ func (candidates *Lookup) GetContacts(count int) []Item {
 
 // Sort the Contacts in ContactCandidates
 func (candidates *Lookup) Sort() {
-	fmt.Println(candidates)
 	sort.Sort(candidates)
 }
 
