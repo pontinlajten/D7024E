@@ -47,19 +47,12 @@ func (network *Network) Listen() { // Listen(ip string, port int) original.
 
 		decoded := unmarshall(buffer[:n])
 
-		fmt.Println("BOBO ÄR BaST ::::::::: " + decoded.Body.TargetId.String())
-
 		network.Kademlia.Rt.AddContact(*decoded.Source)
 
 		msg := network.MsgHandler(decoded)
-		fmt.Println("UNMarshal to marshal:  ", msg.Body.Nodes)
 		replyEncoded := marshall(msg)
 
-		test := unmarshall(replyEncoded)
-		fmt.Println("Marshal to unmarshal:  ", test.Body.Nodes)
-
 		sendResponse(replyEncoded, addr, conn)
-
 	}
 }
 
@@ -73,7 +66,6 @@ func (network *Network) MsgHandler(decoded Message) Message {
 		reply.RPC = FIND_NODE_REPLY
 
 		body.Nodes = network.FindNodeHandler(decoded)
-		fmt.Println(body.Nodes)
 
 		body.OriginalSource = decoded.Source
 		reply.Body = body
@@ -103,8 +95,6 @@ func (network *Network) MsgHandler(decoded Message) Message {
 
 func (network *Network) FindNodeHandler(msg Message) []Contact {
 	contacts := network.Kademlia.Rt.FindClosestContacts(msg.Body.TargetId, bucketSize)
-	fmt.Println("THIS IS THE ROUTING TABLE RETURNING TO THE SENDER")
-	fmt.Println(contacts)
 	return contacts
 }
 
@@ -164,18 +154,8 @@ func (network *Network) SendData(msg Message, contact *Contact) (Message, error)
 
 	buf := make([]byte, MAX_BUFFER_SIZE)
 
-	n, _, err2 := Client.ReadFrom([]byte(buf))
+	n, _, _ := Client.ReadFrom([]byte(buf))
 	response := unmarshall(buf[:n])
-	if response.RPC == FIND_NODE_REPLY {
-		fmt.Println(network.Kademlia.Me.Address + "checking if reply correct")
-		fmt.Println(response.Body.Nodes)
-
-		//for item := Body.Nodes{
-
-		//}
-	}
-
-	fmt.Println(err2)
 
 	if err != nil {
 		fmt.Printf("failed to %s to %s error: %s", rpcMsg, address.String(), err)

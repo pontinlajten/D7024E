@@ -31,10 +31,7 @@ type KeyValue struct {
 
 func NewKademlia(ip string) (kademlia Kademlia) {
 	kademlia.Id = NewKademliaID(kademlia.HashIt(ip))
-	fmt.Println("MY IDIDIDIDIDID")
-	fmt.Println(kademlia.Id)
 	kademlia.Me = NewContact(kademlia.Id, ip)
-	fmt.Println(kademlia.Me)
 	kademlia.Rt = NewRoutingTable(kademlia.Me)
 	kademlia.Me.Address = ip
 
@@ -60,8 +57,6 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 	// shortlist of k-closest nodes
 	shortlist := kademlia.NewList(targetID)
 
-	fmt.Println("The length is asffasdfdsa")
-	fmt.Println(shortlist.Len())
 	// if LookupContact on JoinNetwork
 	if shortlist.Len() < alpha {
 		go AsyncFindContact(shortlist.Cons[0].Con, *targetID, *net, channel)
@@ -85,8 +80,6 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 
 func AsyncFindContact(reciver Contact, targetID KademliaID, net Network, channel chan []Contact) {
 	response, err := net.SendFindContactMessage(&reciver, &targetID)
-	fmt.Println("asyncfunctionnnn")
-	fmt.Println(response)
 	if err != nil {
 		fmt.Println(err)
 	}

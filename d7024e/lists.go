@@ -38,29 +38,13 @@ func (list *List) Update(cons []Contact) (Contact, bool) {
 	copyOfList := list.Cons //2
 	responeList := List{}   //1
 
-	fmt.Println("1")
-
 	for _, con := range cons {
 		item := Item{con, false}
 		responeList.Cons = append(responeList.Cons, item)
 	}
 
-	fmt.Println("2")
-	//SortedList := list.SortIt(copyOfList, responeList.Cons)
+	SortedList := list.SortIt(copyOfList, responeList.Cons)
 
-	list.Mutex.Lock()
-	SortedList := Lookup{}
-	fmt.Println()
-	fmt.Println("2.1")
-	SortedList.Append(copyOfList)
-	fmt.Println("2.2")
-	SortedList.Append(responeList.Cons)
-	fmt.Println("2.3")
-	SortedList.Sort()
-	fmt.Println("2.4")
-	list.Mutex.Unlock()
-
-	fmt.Println("3")
 	if len(SortedList.Cons) >= K {
 		list.Cons = SortedList.GetContacts(K)
 	} else {
@@ -85,12 +69,8 @@ func (list *List) findContact() (Contact, bool) {
 func (list *List) UpdateList(ID KademliaID, ch chan []Contact, net Network) {
 	for {
 		contacts := <-ch
-		fmt.Print("in updatelist!!!!")
-		fmt.Println(contacts)
 		nextContact, Finished := list.Update(contacts)
 
-		fmt.Println("check finished hlblbalblabla")
-		fmt.Println(Finished)
 		if Finished {
 			return
 		} else {

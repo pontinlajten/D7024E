@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"time"
 	"unicode/utf8"
 
 	project "main/d7024e"
@@ -33,14 +32,12 @@ func main() {
 
 	bsID := project.NewKademliaID(project.HashIt(bsIP))
 	bsContact := project.NewContact(bsID, bsIP)
-	fmt.Println(bsContact)
 
 	me := project.NewKademlia(localIP)
 
 	network := project.CreateNetwork(&me)
 
 	if localIP != bsIP {
-		time.Sleep(time.Second * 3)
 		// newContact := kad.NewContact(kad.NewKademliaID(kad.HashIt(bsIP)), bsIP)
 		me.InitNetwork(&bsContact)
 		//fmt.Printf("\nRoutingtable: %x\n", me.Rt.FindClosestContacts(me.Me.ID, 4))
