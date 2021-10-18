@@ -21,7 +21,7 @@ func TestNewKademlia(t *testing.T) {
 	newKad := NewKademlia(testIP)
 	newContact := newKad.Id
 
-	if newContact != testID {
+	if !newContact.Equals(testID) {
 		t.Errorf("Wrong id")
 	}
 
