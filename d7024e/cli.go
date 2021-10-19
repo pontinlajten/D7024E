@@ -8,10 +8,6 @@ import (
 	"strings"
 )
 
-const (
-	b_size = 20
-)
-
 type cli struct {
 	Network *Network
 }
@@ -39,29 +35,33 @@ func (cli *cli) Run() {
 			if inputSplit[0] == "PUT" {
 				upload := inputSplit[1]
 
-				hash := cli.Network.Kademlia.Store(upload)
-				fmt.Printf("Successfully uploaded value! Hash: %v", hash)
-
+				contacts := cli.Network.Kademlia.Store(upload)
+				fmt.Println("---------------------")
+				fmt.Println()
+				fmt.Print("Data stored at: ")
+				fmt.Println(contacts)
+				fmt.Println("---------------------")
 
 			} else {
 				fmt.Println("Invalid arguments for PUT...")
 			}
 		case "GET":
-			if inputSplit[0] == "GET" {
-				hash := inputSplit[1]
-				fmt.Println(hash)
+			if len(inputSplit) == 2 {
+				find := inputSplit[1]
+				b, _ := cli.Network.Kademlia.LookupData(find)
 
-				value, nodeId := cli.Network.Kademlia.LookupData(hash)
-				fmt.Printf("Succefully return value: %v from node: %v", value, nodeId)
+				fmt.Println("---------------------")
+				fmt.Println("Value returned: " + string(b))
+				fmt.Println("----------------------")
 			} else {
 				fmt.Println("Invalid arguments for GET...")
 			}
 		default:
 			fmt.Println("INVALID COMMAND")
 			fmt.Println("EXIT, PUT <arg1>, GET <arg1> <arg2> ...")
-		}
 
-		fmt.Println("")
-		fmt.Println(cli.Network.Kademlia.Rt.FindClosestContacts(cli.Network.Kademlia.Me.ID, b_size))
+			fmt.Println("")
+			fmt.Println(cli.Network.Kademlia.Rt.FindClosestContacts(cli.Network.Kademlia.Me.ID, bucketSize))
+		}
 	}
 }

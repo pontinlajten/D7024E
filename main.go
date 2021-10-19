@@ -8,10 +8,9 @@ package main
 import (
 	"fmt"
 	"log"
+	project "main/d7024e"
 	"net"
 	"unicode/utf8"
-
-	project "main/d7024e"
 )
 
 const (
@@ -23,7 +22,6 @@ func main() {
 	ip := "162.20.0.0:1000"
 	hash := project.HashIt(ip)
 	fmt.Println(hash)
-
 	nodeIp := GetOutboundIP()
 
 	bsIP := GenerateBootstrap(nodeIp.String(), bs_template) + ":" + port
@@ -41,9 +39,9 @@ func main() {
 	network := project.CreateNetwork(&me)
 
 	if localIP != bsIP {
-			// newContact := kad.NewContact(kad.NewKademliaID(kad.HashIt(bsIP)), bsIP)
+		// newContact := kad.NewContact(kad.NewKademliaID(kad.HashIt(bsIP)), bsIP)
 		me.InitNetwork(&bsContact)
-			//fmt.Printf("\nRoutingtable: %x\n", me.Rt.FindClosestContacts(me.Me.ID, 4))
+		//fmt.Printf("\nRoutingtable: %x\n", me.Rt.FindClosestContacts(me.Me.ID, 4))
 	}
 
 	go network.Listen()
@@ -51,7 +49,6 @@ func main() {
 	cli := project.NewCli(&network)
 	cli.Run()
 }
-
 
 func GetOutboundIP() net.IP {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
@@ -75,4 +72,3 @@ func GenerateBootstrap(str string, bp string) string {
 
 	return str
 }
-

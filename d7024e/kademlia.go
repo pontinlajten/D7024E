@@ -1,10 +1,7 @@
 package d7024e
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
-	"log"
 	"sync"
 )
 
@@ -20,13 +17,11 @@ type Kademlia struct {
 	Me        Contact
 	Rt        *RoutingTable
 	KeyValues []KeyValue
-	Log       *log.Logger
 }
 
 type KeyValue struct {
 	Key   string
 	Value string
-	//TimeStamp int
 }
 
 func NewKademlia(ip string) (kademlia Kademlia) {
@@ -41,19 +36,15 @@ func NewKademlia(ip string) (kademlia Kademlia) {
 //---------------------------------------------------------//
 
 func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Contact) {
-	//ch := make(chan []Contact)
 	net := &Network{}
 	net.Kademlia = kademlia
 	channel := make(chan []Contact)
 
-	// shortlist of k-closest nodes
 	shortlist := kademlia.NewList(targetID)
 
-	// if LookupContact on JoinNetwork
 	if shortlist.Len() < alpha {
 		go AsyncFindContact(shortlist.Cons[0].Con, *targetID, *net, channel)
 	} else {
-		// sending RPCs to the alpha nodes async
 		for i := 0; i < alpha; i++ {
 			go AsyncFindContact(shortlist.Cons[i].Con, *targetID, *net, channel)
 		}
@@ -61,12 +52,10 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 
 	shortlist.UpdateList(*targetID, channel, *net)
 
-	// creating the result list
 	for _, insItem := range shortlist.Cons {
 		resultlist = append(resultlist, insItem.Con)
 	}
 
-	//kademlia.Log.Printf("Looking up contact %s and found closest %s.", targetID.String(), resultlist)
 	return
 }
 
@@ -92,28 +81,19 @@ func (kademlia *Kademlia) LookupDataHash(hash string) *KeyValue {
 func (kademlia *Kademlia) LookupData(hash string) ([]byte, Contact) {
 	net := &Network{}
 	net.Kademlia = kademlia
-	var wg sync.WaitGroup // gorutine waiting pool
-	fmt.Println("   HASH IN LOOKUPDATA   ")
-	fmt.Println(hash)
-
-	hashID := NewKademliaID(HashIt(hash)) // create kademlia ID from the hashed data
-	fmt.Println("Lookin for hash in nodes : " + hashID.String())
-	/*
-		shortlist (below) is a LookupList which both contains the contacts
-		that need to be traversed in order to find the data as well
-		as data itself.
-	*/
+	var wg sync.WaitGroup
+	s_hash := string(hash)
+	hashID := NewKademliaID(s_hash)
 
 	shortlist := kademlia.NewList(hashID)
 
-	ch := make(chan []Contact)          // channel -> returns contacts
-	targetData := make(chan []byte)     // channel -> when the data is found it is communicated through this channel
-	dataContactCh := make(chan Contact) // channel that only takes the contact that returned the data
+	ch := make(chan []Contact)
+	targetData := make(chan []byte)
+	dataContactCh := make(chan Contact)
 
 	if shortlist.Len() < alpha {
 		go asyncLookupData(hash, shortlist.Cons[0].Con, *net, ch, targetData, dataContactCh)
 	} else {
-		// sending RPCs to the alpha nodes async
 		for i := 0; i < alpha; i++ {
 			go asyncLookupData(hash, shortlist.Cons[i].Con, *net, ch, targetData, dataContactCh)
 		}
@@ -121,7 +101,6 @@ func (kademlia *Kademlia) LookupData(hash string) ([]byte, Contact) {
 
 	data, con := shortlist.updateLookupData(hash, ch, targetData, dataContactCh, *net, wg)
 
-	// creating the resultdata, con :=shortlist.updateLook list
 	return data, con
 }
 
@@ -130,6 +109,27 @@ func asyncLookupData(hash string, receiver Contact, net Network, ch chan []Conta
 	ch <- response.Body.Nodes
 	target <- []byte(response.Body.Value)
 	dataContactCh <- *response.Source
+}
+
+/////////////////////////////// STORE RPC /////////////////////////////////////////
+
+func (kademlia *Kademlia) Store(upload string) string {
+	net := &Network{}
+	net.Kademlia = kademlia
+	hash := HashIt(upload)
+	hashID := NewKademliaID(hash)
+
+	k_desitnations := kademlia.LookupContact(hashID)
+	var hashReturn string
+
+	for _, target := range k_desitnations {
+		response, _ := net.SendStoreMessage(upload, &target)
+		if response.Body.Key != "" {
+			hashReturn = response.Body.Key
+		}
+	}
+
+	return hashReturn
 }
 
 func (kademlia *Kademlia) StoreKeyValue(value string) string {
@@ -144,29 +144,14 @@ func (kademlia *Kademlia) StoreKeyValue(value string) string {
 	var newKeyValue KeyValue
 
 	newKeyValue.Key = hashID
-	newKeyValue.Value = hash
+	newKeyValue.Value = value
+	//newKeyValue.TimeStamp = 24
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
 
+	fmt.Println("ALL STORED VALUES IN NODE: ")
+	fmt.Println(kademlia.KeyValues)
+
 	return newKeyValue.Key
-}
-
-func (kademlia *Kademlia) Store(upload string) string {
-	net := &Network{}
-	net.Kademlia = kademlia
-	hash := HashIt(upload)
-	hashID := NewKademliaID(hash)
-
-	k_desitnations := kademlia.LookupContact(hashID)
-	var hashReturn string
-
-	for _, target := range k_desitnations { // Checks shortlist for k-nearest.
-		response, _ := net.SendStoreMessage(upload, &target)
-		if response.Body.Key != "" {
-			hashReturn = response.Body.Key
-		}
-	}
-
-	return hashReturn
 }
 
 //---------------------------------------------------------//
@@ -177,23 +162,6 @@ func (kademlia *Kademlia) InitNetwork(known *Contact) []Contact {
 
 	//fmt.Printf("Joining network via %s", known.String())
 	return contacts
-}
-
-//help function that hash data
-func (kademlia *Kademlia) HashIt(str string) string {
-	hashStr := sha1.New()
-	hashStr.Write([]byte(str))
-	hash := hex.EncodeToString(hashStr.Sum(nil))
-
-	return hash
-}
-
-func HashIt(str string) string {
-	hashStr := sha1.New()
-	hashStr.Write([]byte(str))
-	hash := hex.EncodeToString(hashStr.Sum(nil))
-
-	return hash
 }
 
 //---------------------------------------------------------//
