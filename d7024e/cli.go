@@ -32,7 +32,7 @@ func (cli *cli) Run() {
 			fmt.Println("EXIT ENTERED.")
 			return
 		case "PUT":
-			if len(inputSplit) == 2 {
+			if inputSplit[0] == "PUT" {
 				upload := inputSplit[1]
 
 				contacts := cli.Network.Kademlia.Store(upload)

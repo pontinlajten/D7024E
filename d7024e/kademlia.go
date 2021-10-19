@@ -119,27 +119,23 @@ func asyncLookupData(hash string, receiver Contact, net Network, ch chan []Conta
 
 /////////////////////////////// STORE RPC /////////////////////////////////////////
 
-func (kademlia *Kademlia) Store(upload string) []Contact {
+func (kademlia *Kademlia) Store(upload string) string {
 	net := &Network{}
 	net.Kademlia = kademlia
 	hash := HashIt(upload)
 	hashID := NewKademliaID(hash)
 
 	k_desitnations := kademlia.LookupContact(hashID)
-	fmt.Println("STORING AT: ")
-	fmt.Println(k_desitnations)
-
-	var hashList []string
-
-	fmt.Println("Storing hashid: " + hashID.String())
+	var hashReturn string
 
 	for _, target := range k_desitnations {
 		response, _ := net.SendStoreMessage(upload, &target)
-		hash := response.Body.Key
-		hashList = append(hashList, hash)
+		if response.Body.Key != "" {
+			hashReturn = response.Body.Key
+		}
 	}
 
-	return k_desitnations
+	return hashReturn
 }
 
 func (kademlia *Kademlia) StoreKeyValue(value string) string {
