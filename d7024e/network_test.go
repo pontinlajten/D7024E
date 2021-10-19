@@ -38,7 +38,7 @@ func TestSendPing(t *testing.T) {
 	network.Kademlia = &kademlia
 	go network.Listen()
 
-	err := network.SendPingMessage(&network.Kademlia.Me)
+	err := network.PingMessage(&network.Kademlia.Me)
 	if err != nil {
 		t.Fail()
 	}
@@ -55,7 +55,7 @@ func TestSendStore(t *testing.T) {
 	go network.Listen()
 
 	value := "1337"
-	response, _ := network.SendStoreMessage(value, &network.Kademlia.Me)
+	response, _ := network.StoreMessage(value, &network.Kademlia.Me)
 
 	if response.Body.Key == "" {
 		t.Fail()
@@ -73,9 +73,9 @@ func TestSendFindData(t *testing.T) {
 	go network.Listen()
 
 	value := "1337"
-	storeResponse, _ := network.SendStoreMessage(value, &network.Kademlia.Me)
+	storeResponse, _ := network.StoreMessage(value, &network.Kademlia.Me)
 	hash := storeResponse.Body.Key
-	response, _ := network.SendFindDataMessage(hash, &network.Kademlia.Me)
+	response, _ := network.FindDataMessage(hash, &network.Kademlia.Me)
 
 	if response.Body.Value != value {
 		t.Fail()

@@ -63,7 +63,7 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 	Use channels inorder to keep data from find_contact "safe". In terms of data write/read safety.
 */
 func AsyncFindContact(reciver Contact, targetID KademliaID, net Network, channel chan []Contact) {
-	response, err := net.SendFindContactMessage(&reciver, &targetID)
+	response, err := net.FindContactMessage(&reciver, &targetID)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -71,15 +71,6 @@ func AsyncFindContact(reciver Contact, targetID KademliaID, net Network, channel
 }
 
 //---------------------------------------------------------//
-
-func (kademlia *Kademlia) LookupDataHash(hash string) *KeyValue {
-	for _, keyVal := range kademlia.KeyValues {
-		if hash == keyVal.Key {
-			return &keyVal
-		}
-	}
-	return nil
-}
 
 func (kademlia *Kademlia) LookupData(hash string) ([]byte, Contact) {
 	net := &Network{}
@@ -95,10 +86,10 @@ func (kademlia *Kademlia) LookupData(hash string) ([]byte, Contact) {
 	dataContactCh := make(chan Contact)
 
 	if shortlist.Len() < alpha {
-		go asyncLookupData(hash, shortlist.Cons[0].Con, *net, ch, targetData, dataContactCh)
+		go AsyncLookupData(hash, shortlist.Cons[0].Con, *net, ch, targetData, dataContactCh)
 	} else {
 		for i := 0; i < alpha; i++ {
-			go asyncLookupData(hash, shortlist.Cons[i].Con, *net, ch, targetData, dataContactCh)
+			go AsyncLookupData(hash, shortlist.Cons[i].Con, *net, ch, targetData, dataContactCh)
 		}
 	}
 
@@ -107,11 +98,20 @@ func (kademlia *Kademlia) LookupData(hash string) ([]byte, Contact) {
 	return data, con
 }
 
+func (kademlia *Kademlia) LookupDataHash(hash string) *KeyValue {
+	for _, keyVal := range kademlia.KeyValues {
+		if hash == keyVal.Key {
+			return &keyVal
+		}
+	}
+	return nil
+}
+
 /*
 	Use channels inorder to keep data from find_value "safe". In terms of data write/read safety.
 */
-func asyncLookupData(hash string, receiver Contact, net Network, ch chan []Contact, target chan []byte, dataContactCh chan Contact) {
-	response, _ := net.SendFindDataMessage(hash, &receiver)
+func AsyncLookupData(hash string, receiver Contact, net Network, ch chan []Contact, target chan []byte, dataContactCh chan Contact) {
+	response, _ := net.FindDataMessage(hash, &receiver)
 	ch <- response.Body.Nodes
 	target <- []byte(response.Body.Value)
 	dataContactCh <- *response.Source
@@ -129,7 +129,7 @@ func (kademlia *Kademlia) Store(upload string) string {
 	var hashReturn string
 
 	for _, target := range k_desitnations {
-		response, _ := net.SendStoreMessage(upload, &target)
+		response, _ := net.StoreMessage(upload, &target)
 		if response.Body.Key != "" {
 			hashReturn = response.Body.Key
 		}

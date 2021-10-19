@@ -3,13 +3,11 @@ package d7024e
 import (
 	"fmt"
 	"net"
-	"sync"
 
 	"github.com/pkg/errors"
 )
 
 type Network struct {
-	Mutex    *sync.Mutex
 	Kademlia *Kademlia
 }
 
@@ -21,7 +19,6 @@ const (
 // Template for init. an network.
 func CreateNetwork(kademlia *Kademlia) Network {
 	network := Network{} // Create from Network struct
-	network.Mutex = &sync.Mutex{}
 	network.Kademlia = kademlia
 	return network
 }
@@ -153,7 +150,7 @@ func (network *Network) SendData(msg Message, contact *Contact) (Message, error)
 	return response, nil
 }
 
-func (network *Network) SendPingMessage(contact *Contact) error {
+func (network *Network) PingMessage(contact *Contact) error {
 	msg := Message{Source: &network.Kademlia.Me, RPC: PING}
 	_, err := network.SendData(msg, contact)
 	if err != nil {
@@ -162,7 +159,7 @@ func (network *Network) SendPingMessage(contact *Contact) error {
 	return nil
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact, targetId *KademliaID) ([]Contact, error) {
+func (network *Network) FindContactMessage(contact *Contact, targetId *KademliaID) ([]Contact, error) {
 	msg := Message{Source: &network.Kademlia.Me, RPC: FIND_NODE, Body: MsgBody{TargetId: targetId}}
 	res, err := network.SendData(msg, contact)
 	if err != nil {
@@ -172,12 +169,12 @@ func (network *Network) SendFindContactMessage(contact *Contact, targetId *Kadem
 	return res.Body.Nodes, nil
 }
 
-func (network *Network) SendFindDataMessage(hash string, contact *Contact) (Message, error) {
+func (network *Network) FindDataMessage(hash string, contact *Contact) (Message, error) {
 	msg := Message{Source: &network.Kademlia.Me, RPC: FIND_DATA, Body: MsgBody{Key: hash}}
 	return network.SendData(msg, contact)
 }
 
-func (network *Network) SendStoreMessage(value string, contact *Contact) (Message, error) {
+func (network *Network) StoreMessage(value string, contact *Contact) (Message, error) {
 	msg := Message{Source: &network.Kademlia.Me, RPC: STORE, Body: MsgBody{Value: value}}
 	res, err := network.SendData(msg, contact)
 	if err != nil {

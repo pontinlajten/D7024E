@@ -6,19 +6,17 @@ import (
 )
 
 //lookup list
-type Lookup struct { // List
-	Cons  []Item
-	Mutex sync.Mutex
+type Lookup struct { // List for shorlist
+	Cons []Item
 }
 
-type List struct { // Temp
-	Cons  []Item
-	Mutex sync.Mutex
+type List struct { // Temp for shortlist
+	Cons []Item
 }
 
 type Item struct {
 	Con  Contact
-	Seen bool // IF VISITED
+	Seen bool // IF VISITED.
 }
 
 func (kademlia *Kademlia) NewList(targetID *KademliaID) (list *List) {
@@ -34,8 +32,8 @@ func (kademlia *Kademlia) NewList(targetID *KademliaID) (list *List) {
 }
 
 func (list *List) Update(cons []Contact) (Contact, bool) {
-	copyOfList := list.Cons //2
-	responeList := List{}   //1
+	copyOfList := list.Cons
+	responeList := List{}
 
 	for _, con := range cons {
 		item := Item{con, false}
@@ -92,7 +90,7 @@ func (lookuplist *List) updateLookupData(hash string, ch chan []Contact, target 
 		if Done {
 			return nil, Contact{}
 		} else {
-			go asyncLookupData(hash, nextContact, net, ch, target, dataContactCh)
+			go AsyncLookupData(hash, nextContact, net, ch, target, dataContactCh)
 		}
 	}
 }
@@ -106,7 +104,7 @@ func (list *List) SortIt(list1 []Item, list2 []Item) Lookup {
 }
 
 /*
-	Modified version of contact.go append. Instead on shortlist.
+	Modified version of contact.go append. Instead applied to the shortlist.
 */
 func (candidates *Lookup) Append(contacts []Item) {
 	for _, nextCandidate := range contacts {

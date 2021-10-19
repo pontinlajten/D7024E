@@ -8,16 +8,16 @@ import (
 	"strings"
 )
 
-type cli struct {
+type Cli struct {
 	Network *Network
 }
 
-func NewCli(network *Network) *cli {
-	cli := &cli{network}
+func NewCli(network *Network) *Cli {
+	cli := &Cli{network}
 	return cli
 }
 
-func (cli *cli) Run() {
+func (cli *Cli) Run() {
 	for {
 		fmt.Println("<CMD> ")
 		input := bufio.NewScanner(os.Stdin)
