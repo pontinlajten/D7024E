@@ -19,10 +19,12 @@ type Item struct {
 	Seen bool // IF VISITED.
 }
 
+//return a list of the k closest kademlianodes from kademlias routingtable
 func (kademlia *Kademlia) NewList(targetID *KademliaID) (list *List) {
-	list = &List{}
 
 	closestK := kademlia.Rt.FindClosestContacts(targetID, bucketSize)
+
+	list = &List{}
 
 	for _, item := range closestK {
 		listitem := &Item{item, false}
@@ -76,21 +78,21 @@ func (list *List) UpdateList(ID KademliaID, ch chan []Contact, net Network) {
 	}
 }
 
-func (lookuplist *List) updateLookupData(hash string, ch chan []Contact, target chan []byte, dataContactCh chan Contact, net Network, wg sync.WaitGroup) ([]byte, Contact) {
+func (list *List) updateFindData(hash string, ch chan []Contact, target chan []byte, dataConCh chan Contact, net Network, wg sync.WaitGroup) ([]byte, Contact) {
 	for {
-		contacts := <-ch
+		cons := <-ch
 		targetData := <-target
-		dataContact := <-dataContactCh
+		dataCon := <-dataConCh
 
 		if targetData != nil {
-			return targetData, dataContact
+			return targetData, dataCon
 		}
 
-		nextContact, Done := lookuplist.Update(contacts)
+		nextContact, Done := list.Update(cons)
 		if Done {
 			return nil, Contact{}
 		} else {
-			go AsyncLookupData(hash, nextContact, net, ch, target, dataContactCh)
+			go AsyncFindData(hash, nextContact, net, ch, target, dataConCh)
 		}
 	}
 }
@@ -106,19 +108,19 @@ func (list *List) SortIt(list1 []Item, list2 []Item) Lookup {
 /*
 	Modified version of contact.go append. Instead applied to the shortlist.
 */
-func (candidates *Lookup) Append(contacts []Item) {
-	for _, nextCandidate := range contacts {
+func (lookup *Lookup) Append(contacts []Item) {
+	for _, nextCon := range contacts {
 		approved := true
 
-		for _, candidate := range candidates.Cons {
+		for _, con := range lookup.Cons {
 
-			if candidate.Con.ID.Equals(nextCandidate.Con.ID) {
+			if con.Con.ID.Equals(nextCon.Con.ID) {
 				approved = false
 				break
 			}
 		}
 		if approved {
-			candidates.Cons = append(candidates.Cons, nextCandidate)
+			lookup.Cons = append(lookup.Cons, nextCon)
 		}
 	}
 }
@@ -127,26 +129,26 @@ func (candidates *Lookup) Append(contacts []Item) {
 	Everything below is gathered from contact.go
 */
 
-func (candidates *Lookup) GetContacts(count int) []Item {
-	return candidates.Cons[:count]
+func (lookup *Lookup) GetContacts(count int) []Item {
+	return lookup.Cons[:count]
 }
 
-func (candidates *Lookup) Sort() {
-	sort.Sort(candidates)
+func (lookup *Lookup) Sort() {
+	sort.Sort(lookup)
 }
 
-func (candidates *Lookup) Len() int {
-	return len(candidates.Cons)
+func (lookup *Lookup) Len() int {
+	return len(lookup.Cons)
 }
 
-func (candidates *List) Len() int {
-	return len(candidates.Cons)
+func (list *List) Len() int {
+	return len(list.Cons)
 }
 
-func (candidates *Lookup) Swap(i, j int) {
-	candidates.Cons[i], candidates.Cons[j] = candidates.Cons[j], candidates.Cons[i]
+func (lookup *Lookup) Swap(i, j int) {
+	lookup.Cons[i], lookup.Cons[j] = lookup.Cons[j], lookup.Cons[i]
 }
 
-func (candidates *Lookup) Less(i, j int) bool {
-	return candidates.Cons[i].Con.Less(&candidates.Cons[j].Con)
+func (lookup *Lookup) Less(i, j int) bool {
+	return lookup.Cons[i].Con.Less(&lookup.Cons[j].Con)
 }

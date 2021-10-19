@@ -35,7 +35,7 @@ func NewKademlia(ip string) (kademlia Kademlia) {
 
 //---------------------------------------------------------//
 
-func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Contact) {
+func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultingList []Contact) {
 	net := &Network{}
 	net.Kademlia = kademlia
 	channel := make(chan []Contact)
@@ -52,8 +52,8 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 
 	shortlist.UpdateList(*targetID, channel, *net)
 
-	for _, insItem := range shortlist.Cons {
-		resultlist = append(resultlist, insItem.Con)
+	for _, insert := range shortlist.Cons {
+		resultingList = append(resultingList, insert.Con)
 	}
 
 	return
@@ -83,17 +83,17 @@ func (kademlia *Kademlia) LookupData(hash string) ([]byte, Contact) {
 
 	ch := make(chan []Contact)
 	targetData := make(chan []byte)
-	dataContactCh := make(chan Contact)
+	dataConCh := make(chan Contact)
 
 	if shortlist.Len() < alpha {
-		go AsyncLookupData(hash, shortlist.Cons[0].Con, *net, ch, targetData, dataContactCh)
+		go AsyncFindData(hash, shortlist.Cons[0].Con, *net, ch, targetData, dataConCh)
 	} else {
 		for i := 0; i < alpha; i++ {
-			go AsyncLookupData(hash, shortlist.Cons[i].Con, *net, ch, targetData, dataContactCh)
+			go AsyncFindData(hash, shortlist.Cons[i].Con, *net, ch, targetData, dataConCh)
 		}
 	}
 
-	data, con := shortlist.updateLookupData(hash, ch, targetData, dataContactCh, *net, wg)
+	data, con := shortlist.updateFindData(hash, ch, targetData, dataConCh, *net, wg)
 
 	return data, con
 }
@@ -110,11 +110,11 @@ func (kademlia *Kademlia) LookupDataHash(hash string) *KeyValue {
 /*
 	Use channels inorder to keep data from find_value "safe". In terms of data write/read safety.
 */
-func AsyncLookupData(hash string, receiver Contact, net Network, ch chan []Contact, target chan []byte, dataContactCh chan Contact) {
+func AsyncFindData(hash string, receiver Contact, net Network, ch chan []Contact, target chan []byte, dataConCh chan Contact) {
 	response, _ := net.FindDataMessage(hash, &receiver)
 	ch <- response.Body.Nodes
 	target <- []byte(response.Body.Value)
-	dataContactCh <- *response.Source
+	dataConCh <- *response.Source
 }
 
 /////////////////////////////// STORE RPC /////////////////////////////////////////
