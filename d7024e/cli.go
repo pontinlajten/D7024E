@@ -8,10 +8,6 @@ import (
 	"strings"
 )
 
-const (
-	b_size = 20
-)
-
 type cli struct {
 	Network *Network
 }
@@ -65,7 +61,7 @@ func (cli *cli) Run() {
 			fmt.Println("EXIT, PUT <arg1>, GET <arg1> <arg2> ...")
 
 			fmt.Println("")
-			fmt.Println(cli.Network.Kademlia.Rt.FindClosestContacts(cli.Network.Kademlia.Me.ID, b_size))
+			fmt.Println(cli.Network.Kademlia.Rt.FindClosestContacts(cli.Network.Kademlia.Me.ID, bucketSize))
 		}
 	}
 }
