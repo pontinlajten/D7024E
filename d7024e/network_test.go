@@ -46,7 +46,7 @@ func TestSendPing(t *testing.T) {
 
 func TestSendStore(t *testing.T) {
 	nodeIp := GetOutboundIP()
-	port := "1000"
+	port := "1001"
 	localIP := nodeIp.String() + ":" + port
 
 	network := Network{}
@@ -57,14 +57,14 @@ func TestSendStore(t *testing.T) {
 	value := "1337"
 	response, _ := network.SendStoreMessage(value, &network.Kademlia.Me)
 
-	if(response.Body.Key == "") {
+	if response.Body.Key == "" {
 		t.Fail()
 	}
 }
 
 func TestSendFindData(t *testing.T) {
 	nodeIp := GetOutboundIP()
-	port := "1000"
+	port := "1002"
 	localIP := nodeIp.String() + ":" + port
 
 	network := Network{}
@@ -77,7 +77,7 @@ func TestSendFindData(t *testing.T) {
 	hash := storeResponse.Body.Key
 	response, _ := network.SendFindDataMessage(hash, &network.Kademlia.Me)
 
-	if(response.Body.Value != value) {
+	if response.Body.Value != value {
 		t.Fail()
 	}
 }
