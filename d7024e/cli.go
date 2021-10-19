@@ -18,52 +18,50 @@ func NewCli(network *Network) *cli {
 }
 
 func (cli *cli) Run() {
-	fmt.Println("<CMD> ")
-	input := bufio.NewScanner(os.Stdin)
-	input.Scan()
-	inputText := input.Text()
+	for {
+		fmt.Println("<CMD> ")
+		input := bufio.NewScanner(os.Stdin)
+		input.Scan()
+		inputText := input.Text()
 
-	space := regexp.MustCompile(` `)
-	inputSplit := space.Split(inputText, 10)
+		space := regexp.MustCompile(` `)
+		inputSplit := space.Split(inputText, 10)
 
-	switch strings.ToUpper(inputSplit[0]) {
-	case "EXIT":
-		fmt.Println("EXIT ENTERED.")
-		return
-	case "PUT":
-		if len(inputSplit) == 2 {
-			upload := inputSplit[1]
-			fmt.Println(upload)
+		switch strings.ToUpper(inputSplit[0]) {
+		case "EXIT":
+			fmt.Println("EXIT ENTERED.")
+			return
+		case "PUT":
+			if inputSplit[0] == "PUT" {
+				upload := inputSplit[1]
 
-			//cli.Network.Kademlia.Store(upload)
+				contacts := cli.Network.Kademlia.Store(upload)
+				fmt.Println("---------------------")
+				fmt.Println()
+				fmt.Print("Data stored at: ")
+				fmt.Println(contacts)
+				fmt.Println("---------------------")
 
+			} else {
+				fmt.Println("Invalid arguments for PUT...")
+			}
+		case "GET":
+			if len(inputSplit) == 2 {
+				find := inputSplit[1]
+				b, _ := cli.Network.Kademlia.LookupData(find)
 
-			//h_uploaded := cli.Network.Kademlia.HashIt(upload)
+				fmt.Println("---------------------")
+				fmt.Println("Value returned: " + string(b))
+				fmt.Println("----------------------")
+			} else {
+				fmt.Println("Invalid arguments for GET...")
+			}
+		default:
+			fmt.Println("INVALID COMMAND")
+			fmt.Println("EXIT, PUT <arg1>, GET <arg1> <arg2> ...")
 
-			//response := cli.Network.SendFindDataMessage(h_uploaded, &cli.Network.Kademlia.Me)
-			/*
-				if response {
-					fmt.Println("Uploaded succesfully! Hashed: ")
-					fmt.Println(h_uploaded)
-				} else {
-
-				}
-			*/
-
-		} else {
-			fmt.Println("Invalid arguments for PUT...")
+			fmt.Println("")
+			fmt.Println(cli.Network.Kademlia.Rt.FindClosestContacts(cli.Network.Kademlia.Me.ID, bucketSize))
 		}
-	case "GET":
-		if len(inputSplit) > 2 {
-
-		} else {
-			fmt.Println("Invalid arguments for GET...")
-		}
-	default:
-		fmt.Println("INVALID COMMAND")
-		fmt.Println("EXIT, PUT <arg1>, GET <arg1> <arg2> ...")
 	}
-
-	fmt.Println("")
-	cli.Run()
 }

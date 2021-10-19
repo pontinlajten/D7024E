@@ -1,21 +1,21 @@
 package d7024e
 
-import "C"
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 	"sync"
+
+	"github.com/pkg/errors"
 )
 
 type Network struct {
 	Mutex    *sync.Mutex
-	Kademlia *Kademlia // Used in Listen.
+	Kademlia *Kademlia
 }
 
 const (
 	CONN_TYPE       = "udp"
-	MAX_BUFFER_SIZE = 1024
+	MAX_BUFFER_SIZE = 8000
 )
 
 // Template for init. an network.
@@ -28,108 +28,74 @@ func CreateNetwork(kademlia *Kademlia) Network {
 
 /////////////////////////////// RESPONSE /////////////////////////////////////////
 
-/*
-	TODO: Maybe implement channel model instead of mutex. RESEARCH.
-*/
-// IN-PROGRESS
-func (network *Network) Listen(port string) { // Listen(ip string, port int) original.
-	raddr, err := net.ResolveUDPAddr(CONN_TYPE, ":"+port) // ResolveUDPAddr(str, str). me.Address
-	conn, err2 := net.ListenUDP(CONN_TYPE, raddr)
-	if (err != nil) || (err2 != nil) {
-		fmt.Println("Error udp: ", err, "    ", err2)
-	}
-
+func (network *Network) Listen() { // Listen(ip string, port int) original.
+	server := GetUDPAddrFromContact(&network.Kademlia.Me) // Help function
+	conn, _ := net.ListenUDP(CONN_TYPE, &server)
 	defer conn.Close() // defer: Close last, after all functions execution below is done.
-	//channel := make(chan []byte)
+
 	buffer := make([]byte, MAX_BUFFER_SIZE) // Recieve ASCII, byte representation.
 
 	for {
-		n, addr, err := conn.ReadFromUDP(buffer)
-		if err != nil {
-			fmt.Println("Error ReadFromUDP", err)
-		}
-		msg := network.MsgHandler(buffer[:n])
+		n, addr, _ := conn.ReadFromUDP(buffer)
+
+		decoded := unmarshall(buffer[0:n])
+
+		network.Kademlia.Rt.AddContact(*decoded.Source)
+
+		msg := network.ListenHandler(decoded)
 		replyEncoded := marshall(msg)
+
 		sendResponse(replyEncoded, addr, conn)
 	}
 }
 
-func (network *Network) MsgHandler(data []byte) Message {
-	decoded := unmarshall(data)
+func (network *Network) ListenHandler(decoded Message) Message {
 	reply := Message{}
-	fmt.Println("RPC: " + decoded.RPC)
+
+	reply.Source = &network.Kademlia.Me
 
 	if decoded.RPC == FIND_NODE {
-		reply.Id = network.Kademlia.Me.ID.String()
 		reply.RPC = FIND_NODE_REPLY
-		reply.Address = network.Kademlia.Me.Address
-		reply.Data.Nodes = network.FindNodeHandler(decoded)
+		reply.Body.Nodes = network.FindNodeHandler(decoded)
 
 	} else if decoded.RPC == PING {
-		reply.Id = network.Kademlia.Me.ID.String()
-		reply.RPC = PONG
-		reply.Address = network.Kademlia.Me.Address
-		network.PingHandler(decoded)
-
-	} else if decoded.RPC == PONG {
-		network.PongHandler(decoded)
+		reply.RPC = PING_REPLY
 
 	} else if decoded.RPC == FIND_DATA {
-		reply = network.FindValueHandler(decoded)
+		reply.Body = network.FindValueHandler(decoded)
 
 	} else if decoded.RPC == STORE {
-		network.StoreHandler(decoded)
-		reply.Id = network.Kademlia.Me.ID.String()
 		reply.RPC = STORE_REPLY
-		reply.Address = network.Kademlia.Me.Address
+		reply.Body.Key = network.StoreHandler(decoded)
+
 	}
+
+	reply.Body.OriginalSource = decoded.Source
+
 	return reply
 }
 
-func (network *Network) PingHandler(msg Message) {
-	id := NewKademliaID(msg.Id)
-	newContact := NewContact(id, msg.Address)
-	network.Kademlia.Rt.AddContact(newContact)
-}
-
-func (network *Network) PongHandler(msg Message) {
-	id := NewKademliaID(msg.Id)
-	newContact := NewContact(id, msg.Address)
-	network.Kademlia.Rt.AddContact(newContact)
-}
-
 func (network *Network) FindNodeHandler(msg Message) []Contact {
-	id := NewKademliaID(msg.Data.Key)
-	newContacts := network.Kademlia.Rt.FindClosestContacts(id, ALPHA)
-
-	newId := NewKademliaID(msg.Id)
-	newContact := NewContact(newId, msg.Address)
-	network.Kademlia.Rt.AddContact(newContact)
-
-	return newContacts
+	contacts := network.Kademlia.Rt.FindClosestContacts(msg.Body.TargetId, 20)
+	return contacts
 }
 
-func (network *Network) FindValueHandler(msg Message) Message {
-	keyVal := network.Kademlia.LookupData(msg.Data.Key)
+func (network *Network) FindValueHandler(msg Message) MsgBody {
+	keyVal := network.Kademlia.LookupDataHash(msg.Body.Key)
+
+	id := NewKademliaID(msg.Body.Key)
+
 	if keyVal != nil {
-		newId := NewKademliaID(msg.Id)
-		newContact := NewContact(newId, msg.Address)
-		network.Kademlia.Rt.AddContact(newContact)
-		return Message{Id: network.Kademlia.Me.ID.String(), RPC: FIND_DATA_REPLY, Address: network.Kademlia.Me.Address, Data: Data{Key: keyVal.Key, Value: keyVal.Value}}
-
+		return MsgBody{Key: keyVal.Key, Value: keyVal.Value}
 	} else {
-		id := NewKademliaID(msg.Data.Key)
-		newContacts := network.Kademlia.Rt.FindClosestContacts(id, ALPHA)
-
-		newId := NewKademliaID(msg.Id)
-		newContact := NewContact(newId, msg.Address)
-		network.Kademlia.Rt.AddContact(newContact)
-		return Message{Id: network.Kademlia.Me.ID.String(), RPC: FIND_DATA_REPLY, Address: network.Kademlia.Me.Address, Data: Data{Nodes: newContacts}}
+		newContacts := network.Kademlia.Rt.FindClosestContacts(id, 20)
+		return MsgBody{Nodes: newContacts}
 	}
 }
 
-func (network *Network) StoreHandler(msg Message) {
-	network.Kademlia.StoreKeyValue(msg.Data.Value)
+func (network *Network) StoreHandler(msg Message) string {
+	key := network.Kademlia.StoreKeyValue(msg.Body.Value)
+	return key
 }
 
 func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
@@ -139,15 +105,19 @@ func sendResponse(responseMsg []byte, addr *net.UDPAddr, conn *net.UDPConn) {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////// REQUEST /////////////////////////////////////
 
-func SendData(msg Message, contact *Contact) {
+func (network *Network) SendData(msg Message, contact *Contact) (Message, error) {
 	var rpcMsg string
 	sendMsg := marshall(msg)
-	Client, err := net.Dial("udp", contact.Address)
+
+	address := GetUDPAddrFromContact(contact)
+
+	Client, err := net.DialUDP("udp", nil, &address)
 	if err != nil {
-		fmt.Printf("failed to dial %s error: %s", contact.Address, err)
+		return Message{}, errors.Wrap(err, "Client: Failed to open connection to "+address.IP.String())
 	}
+
 	switch msg.RPC {
 	case PING:
 		rpcMsg = PING
@@ -161,48 +131,57 @@ func SendData(msg Message, contact *Contact) {
 	case STORE:
 		rpcMsg = STORE
 	}
-	defer Client.Close()
 
+	defer Client.Close()
 	Client.Write(sendMsg)
 
-	buf := make([]byte, 1024)
-	n, _, err := Client.ReadFromUDP(buf)
+	// Wait for respond from target node.
+
+	buf := make([]byte, MAX_BUFFER_SIZE)
+
+	n, _, _ := Client.ReadFrom([]byte(buf))
+	response := unmarshall(buf[0:n])
+
 	if err != nil {
-		fmt.Printf("failed to %s to %s error: %s", rpcMsg, contact.Address, err)
+		fmt.Printf("failed to %s to %s error: %s", rpcMsg, address.String(), err)
 	}
 
-	response := unmarshall(buf)
+	if network.Validate(msg, response) {
+		network.Kademlia.Rt.AddContact(*response.Source) // Updates routing table if recieves succesful respond from target node.
+	}
+
+	return response, nil
 }
 
-func (network *Network) SendPingMessage(contact *Contact) {
-	msg := Message{Id: network.Kademlia.Me.ID.String(), RPC: PING, Address: network.Kademlia.Me.Address}
-	SendData(msg, contact)
+func (network *Network) SendPingMessage(contact *Contact) error {
+	msg := Message{Source: &network.Kademlia.Me, RPC: PING}
+	_, err := network.SendData(msg, contact)
+	if err != nil {
+		errors.Wrap(err, "Something went wrong")
+	}
+	return nil
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact) {
-	msg := Message{Id: network.Kademlia.Me.ID.String(), RPC: FIND_NODE, Address: network.Kademlia.Me.Address}
-	SendData(msg, contact)
+func (network *Network) SendFindContactMessage(contact *Contact, targetId *KademliaID) ([]Contact, error) {
+	msg := Message{Source: &network.Kademlia.Me, RPC: FIND_NODE, Body: MsgBody{TargetId: targetId}}
+	res, err := network.SendData(msg, contact)
+	if err != nil {
+		errors.Wrap(err, "Something went wrong")
+	}
+
+	return res.Body.Nodes, nil
 }
 
-func (network *Network) SendFindDataMessage(hash string, contact *Contact) {
-	msg := Message{Id: network.Kademlia.Me.ID.String(), Address: network.Kademlia.Me.Address, RPC: FIND_DATA, Data: Data{Key: hash}}
-	SendData(msg, contact)
+func (network *Network) SendFindDataMessage(hash string, contact *Contact) (Message, error) {
+	msg := Message{Source: &network.Kademlia.Me, RPC: FIND_DATA, Body: MsgBody{Key: hash}}
+	return network.SendData(msg, contact)
 }
 
-func (network *Network) SendStoreMessage(value string, contact *Contact) {
-	msg := Message{Address: network.Kademlia.Me.Address, RPC: STORE, Data: Data{Value: value}}
-	SendData(msg, contact)
-}
-
-/////////////////////// HELP FUNCTIONS //////////////////////////
-
-func marshall(msg Message) []byte {
-	encoded, _ := json.Marshal(msg)
-	return encoded
-}
-
-func unmarshall(data []byte) Message {
-	var decoded Message
-	json.Unmarshal([]byte(data), &decoded)
-	return decoded
+func (network *Network) SendStoreMessage(value string, contact *Contact) (Message, error) {
+	msg := Message{Source: &network.Kademlia.Me, RPC: STORE, Body: MsgBody{Value: value}}
+	res, err := network.SendData(msg, contact)
+	if err != nil {
+		errors.Wrap(err, "Something went wrong")
+	}
+	return res, nil
 }

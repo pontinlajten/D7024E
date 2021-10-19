@@ -6,25 +6,19 @@ import (
 )
 
 //lookup list
-type Lookup struct {
+type Lookup struct { // List
 	Cons  []Item
 	Mutex sync.Mutex
 }
 
-type List struct {
+type List struct { // Temp
 	Cons  []Item
 	Mutex sync.Mutex
 }
 
 type Item struct {
 	Con  Contact
-	Seen bool
-}
-
-// creates New list with x closest
-func (kademlia *Kademlia) FindXClosest(target *Contact, x int) []Contact {
-	xClosest := kademlia.Rt.FindClosestContacts(target.ID, x)
-	return xClosest
+	Seen bool // IF VISITED
 }
 
 func (kademlia *Kademlia) NewList(targetID *KademliaID) (list *List) {
@@ -39,28 +33,67 @@ func (kademlia *Kademlia) NewList(targetID *KademliaID) (list *List) {
 	return
 }
 
+func (list *List) Update(cons []Contact) (Contact, bool) {
+	copyOfList := list.Cons //2
+	responeList := List{}   //1
+
+	for _, con := range cons {
+		item := Item{con, false}
+		responeList.Cons = append(responeList.Cons, item)
+	}
+
+	SortedList := list.SortIt(copyOfList, responeList.Cons)
+
+	if len(SortedList.Cons) >= K {
+		list.Cons = SortedList.GetContacts(K)
+	} else {
+		list.Cons = SortedList.GetContacts(len(SortedList.Cons))
+	}
+	nextContact, Finished := list.findContact()
+	return nextContact, Finished
+}
+
+func (list *List) findContact() (Contact, bool) {
+	var newContact Contact
+	Finished := true
+	for i, item := range list.Cons {
+		if !item.Seen {
+			list.Cons[i].Seen = true
+			Finished = false
+		}
+	}
+	return newContact, Finished
+}
+
 func (list *List) UpdateList(ID KademliaID, ch chan []Contact, net Network) {
 	for {
+		contacts := <-ch
+		nextContact, Finished := list.Update(contacts)
 
-		copyOfList := list.Cons //templist2
-		responeList := List{}   //templist
-
-		cons := <-ch
-
-		for _, con := range cons {
-			item := Item{con, false}
-			responeList.Cons = append(responeList.Cons, item)
-		}
-
-		SortedList := list.SortIt(copyOfList, responeList.Cons)
-
-		if len(SortedList.Cons) >= K {
-			list.Cons = SortedList.GetContacts(K)
+		if Finished {
+			return
 		} else {
-			list.Cons = SortedList.GetContacts(len(SortedList.Cons))
-
+			go AsyncFindContact(nextContact, ID, net, ch)
 		}
-		//more to do
+	}
+}
+
+func (lookuplist *List) updateLookupData(hash string, ch chan []Contact, target chan []byte, dataContactCh chan Contact, net Network, wg sync.WaitGroup) ([]byte, Contact) {
+	for {
+		contacts := <-ch
+		targetData := <-target
+		dataContact := <-dataContactCh
+
+		if targetData != nil {
+			return targetData, dataContact
+		}
+
+		nextContact, Done := lookuplist.Update(contacts)
+		if Done {
+			return nil, Contact{}
+		} else {
+			go asyncLookupData(hash, nextContact, net, ch, target, dataContactCh)
+		}
 	}
 }
 
@@ -73,28 +106,37 @@ func (list *List) SortIt(list1 []Item, list2 []Item) Lookup {
 }
 
 /*
-func RecieverResponse(reciver Contact, nt Network, ch chan []Contact) {
-	response, _ := nt.SendFindContactMessage(&reciver)
-	ch <- response
+	Modified version of contact.go append. Instead on shortlist.
+*/
+func (candidates *Lookup) Append(contacts []Item) {
+	for _, nextCandidate := range contacts {
+		approved := true
+
+		for _, candidate := range candidates.Cons {
+
+			if candidate.Con.ID.Equals(nextCandidate.Con.ID) {
+				approved = false
+				break
+			}
+		}
+		if approved {
+			candidates.Cons = append(candidates.Cons, nextCandidate)
+		}
+	}
 }
+
+/*
+	Everything below is gathered from contact.go
 */
 
-// Append an array of Contacts to the ContactCandidates
-func (candidates *Lookup) Append(contacts []Item) {
-	candidates.Cons = append(candidates.Cons, contacts...)
-}
-
-// GetContacts returns the first count number of Contacts
 func (candidates *Lookup) GetContacts(count int) []Item {
 	return candidates.Cons[:count]
 }
 
-// Sort the Contacts in ContactCandidates
 func (candidates *Lookup) Sort() {
 	sort.Sort(candidates)
 }
 
-// Len returns the length of the ContactCandidates
 func (candidates *Lookup) Len() int {
 	return len(candidates.Cons)
 }
@@ -103,14 +145,10 @@ func (candidates *List) Len() int {
 	return len(candidates.Cons)
 }
 
-// Swap the position of the Contacts at i and j
-// WARNING does not check if either i or j is within range
 func (candidates *Lookup) Swap(i, j int) {
 	candidates.Cons[i], candidates.Cons[j] = candidates.Cons[j], candidates.Cons[i]
 }
 
-// Less returns true if the Contact at index i is smaller than
-// the Contact at index j
 func (candidates *Lookup) Less(i, j int) bool {
 	return candidates.Cons[i].Con.Less(&candidates.Cons[j].Con)
 }
