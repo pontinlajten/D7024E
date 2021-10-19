@@ -29,7 +29,7 @@ func unmarshall(data []byte) Message {
 	Validator in network inorder to check if response is legit.
 */
 func (network *Network) Validate(msg Message, res Message) bool {
-	if (msg.RPC+"_REPLY" == res.RPC) && (network.Kademlia.Me.ID.String() == res.Body.OriginalSource.ID.String()) { // Check if message is original sender.
+	if (msg.RPC+"_REPLY" == res.RPC) && (network.Kademlia.Me.ID.String() == res.Body.OriginalSource.ID.String()) { // Check if message is original sender. And correct RPC.
 		return true
 	} else {
 		return false
@@ -37,7 +37,7 @@ func (network *Network) Validate(msg Message, res Message) bool {
 }
 
 /*
-	Great converter!
+	Great converter inorder to get correct representation of IP:PORT from contact!
 */
 func GetUDPAddrFromContact(contact *Contact) net.UDPAddr {
 	addr, port, _ := net.SplitHostPort(contact.Address)

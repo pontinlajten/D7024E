@@ -18,7 +18,7 @@ type List struct { // Temp
 
 type Item struct {
 	Con  Contact
-	Seen bool
+	Seen bool // IF VISITED
 }
 
 func (kademlia *Kademlia) NewList(targetID *KademliaID) (list *List) {
@@ -105,6 +105,9 @@ func (list *List) SortIt(list1 []Item, list2 []Item) Lookup {
 	return sorted
 }
 
+/*
+	Modified version of contact.go append. Instead on shortlist.
+*/
 func (candidates *Lookup) Append(contacts []Item) {
 	for _, nextCandidate := range contacts {
 		approved := true
@@ -121,6 +124,10 @@ func (candidates *Lookup) Append(contacts []Item) {
 		}
 	}
 }
+
+/*
+	Everything below is gathered from contact.go
+*/
 
 func (candidates *Lookup) GetContacts(count int) []Item {
 	return candidates.Cons[:count]

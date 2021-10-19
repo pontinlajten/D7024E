@@ -59,6 +59,9 @@ func (kademlia *Kademlia) LookupContact(targetID *KademliaID) (resultlist []Cont
 	return
 }
 
+/*
+	Use channels inorder to keep data from find_contact "safe". In terms of data write/read safety.
+*/
 func AsyncFindContact(reciver Contact, targetID KademliaID, net Network, channel chan []Contact) {
 	response, err := net.SendFindContactMessage(&reciver, &targetID)
 	if err != nil {
@@ -104,6 +107,9 @@ func (kademlia *Kademlia) LookupData(hash string) ([]byte, Contact) {
 	return data, con
 }
 
+/*
+	Use channels inorder to keep data from find_value "safe". In terms of data write/read safety.
+*/
 func asyncLookupData(hash string, receiver Contact, net Network, ch chan []Contact, target chan []byte, dataContactCh chan Contact) {
 	response, _ := net.SendFindDataMessage(hash, &receiver)
 	ch <- response.Body.Nodes
@@ -149,7 +155,6 @@ func (kademlia *Kademlia) StoreKeyValue(value string) string {
 
 	newKeyValue.Key = hashID
 	newKeyValue.Value = value
-	//newKeyValue.TimeStamp = 24
 	kademlia.KeyValues = append(kademlia.KeyValues, newKeyValue)
 
 	fmt.Println("ALL STORED VALUES IN NODE: ")
